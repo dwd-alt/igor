@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор Ужасного Игоря | Рыгорь Тест</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #ff4444;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b0000, #4a0000);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #ff4444;
+        }
+
+        .header h1 {
+            color: #ff6666;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #ff9999;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .game-screen {
+            padding: 25px;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #ff4444;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 150px;
+            font-family: monospace;
+        }
+
+        .dialogue-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #ff4444;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #ff4444;
+            color: #ffaaaa;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #ff4444;
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 0 10px rgba(255,68,68,0.5);
+        }
+
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .restart-btn:hover {
+            background: #ff4444;
+            color: white;
+            border-color: #ff4444;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+
+        .blood-effect {
+            position: fixed;
+            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 70%, rgba(255,0,0,0.1) 100%);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="blood-effect"></div>
+    <div class="game-container">
+        <div class="header">
+            <h1>⚡ СИМУЛЯТОР УЖАСНОГО ИГОРЯ ⚡</h1>
+            <p>Рыгорь | Срыгорь | Мегасрыгрь</p>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box">
+                <div class="dialogue-text" id="dialogueText"></div>
+                <span id="cursor" class="typing-cursor"></span>
+            </div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 НАЧАТЬ ЗАНОВО</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        // Состояние игры
+        let gameState = {
+            step: 'who_approach',
+            whoApproached: null,
+            actionTaken: null
+        };
+
+        let isTyping = false;
+        let currentTimeout = null;
+
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        function clearOptions() {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+        }
+
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => {
+                if (isTyping) return;
+                clearOptions();
+                onClick();
+            };
+            container.appendChild(btn);
+        }
+
+        function showRestartButton() {
+            const btn = document.getElementById('restartBtn');
+            btn.style.display = 'block';
+            btn.onclick = () => location.reload();
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').innerHTML = text;
+        }
+
+        // Диалоги
+        function startGame() {
+            typeText("Кто подошёл к Игорю?", () => {
+                addOption("👊 Пацан (обычный парень)", () => {
+                    gameState.whoApproached = 'guy';
+                    guyScenario();
+                });
+                addOption("💅 Девочка", () => {
+                    gameState.whoApproached = 'girl';
+                    girlScenario();
+                });
+            });
+        }
+
+        function girlScenario() {
+            typeText("[К ИГОРЮ ПОДОШЛА ДЕВОЧКА]\n\nИгорь мгновенно меняет выражение лица...", () => {
+                setTimeout(() => {
+                    typeText("Игорь (мило улыбаясь): 'привет'", () => {
+                        setTimeout(() => {
+                            typeText("Девочка: 'привет рыгорь'", () => {
+                                setTimeout(() => {
+                                    typeText("Игорь: начинает что-то обсуждать...", () => {
+                                        setTimeout(() => {
+                                            typeText("Девочка: 'Ну ладно...' и уходит.", () => {
+                                                setTimeout(() => {
+                                                    typeText("\n\033[91mКак только девочка ушла...\033[0m\n\nИгорь (злобно шепчет): 'Как же я крут хахахахах'", () => {
+                                                        updateStatus("Итог: Игорь перед девушками — святоша, но внутри такой же гнилой");
+                                                        showRestartButton();
+                                                    });
+                                                }, 500);
+                                            });
+                                        }, 800);
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function guyScenario() {
+            typeText("[К ИГОРЮ ПОДОШЁЛ ПАЦАН]\n\nИгорь (сразу агрессивно): 'Отстань, пидор'", () => {
+                setTimeout(() => {
+                    typeText("Ты: 'Ты чё всех оскорбляешь? Про родню там говоришь...'", () => {
+                        setTimeout(() => {
+                            typeText("Игорь: 'А чё? Твой отец — сдох! И мать твоя такая же! А ты вообще пидр!'", () => {
+                                setTimeout(() => {
+                                    showGuyOptions();
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function showGuyOptions() {
+            typeText("Что ты сделаешь?", () => {
+                addOption("💢 'Да пошел ты нахуй полторашка'", () => {
+                    gameState.actionTaken = 'insult';
+                    insultResponse();
+                });
+                addOption("👊 'После школы мы тебе ебало сломаем'", () => {
+                    gameState.actionTaken = 'threat';
+                    threatResponse();
+                });
+                addOption("🤐 Промолчать", () => {
+                    gameState.actionTaken = 'silence';
+                    silenceResponse();
+                });
+            });
+        }
+
+        function insultResponse() {
+            typeText("Игорь (злится): 'Батя твой!'", () => {
+                setTimeout(() => {
+                    typeText("Игорь: 'Ты завтра умрешь!'", () => {
+                        setTimeout(() => {
+                            showFinalThreats();
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function threatResponse() {
+            typeText("Игорь: 'За что? Я тебя не обзывал!'", () => {
+                setTimeout(() => {
+                    typeText("Ты: 'Ага, конечно!'", () => {
+                        setTimeout(() => {
+                            typeText("Игорь (испуганно): 'Ладно...'", () => {
+                                setTimeout(() => {
+                                    typeText("Игорь разворачивается и уходит", () => {
+                                        setTimeout(() => {
+                                            typeText("\n\033[93m[Игорь — свиноматка! Свалил как трус]\033[0m", () => {
+                                                updateStatus("Итог: Игорь оскорбляет родню, но когда чувствует реальную опасность — СВАЛИЛ!");
+                                                showRestartButton();
+                                            });
+                                        }, 500);
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function silenceResponse() {
+            typeText("Игорь (усмехается): 'срыгни срыгорь'", () => {
+                setTimeout(() => {
+                    typeText("Игорь: 'я выше твоей бабушки на 4 метра!'", () => {
+                        setTimeout(() => {
+                            showFinalThreats();
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function showFinalThreats() {
+            const threats = [
+                "Вся твоя семья — пидоры!",
+                "Твой отец — гондон!",
+                "Ты вообще никто!",
+                "Закройся!",
+                "Твоя мать — шлюха!"
+            ];
+
+            let threatIndex = 0;
+
+            function showNextThreat() {
+                if (threatIndex < threats.length) {
+                    const randomThreat = threats[Math.floor(Math.random() * threats.length)];
+                    typeText(`Игорь: '${randomThreat}'`, () => {
+                        threatIndex++;
+                        setTimeout(showNextThreat, 800);
+                    });
+                } else {
+                    typeText("\nИгорь развернулся и ушёл, гордый своей жестокостью...", () => {
+                        updateStatus("Итог: Игорь оскорбляет родню, угрожает смертью, поливает всех грязью. Но внутри он просто трусливый пёс.");
+                        showRestartButton();
+                    });
+                }
+            }
+
+            typeText("\nИгорь напоследок:", () => {
+                setTimeout(showNextThreat, 500);
+            });
+        }
+
+        // Запуск игры
+        startGame();
+    </script>
+</body>
+</html>

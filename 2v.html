@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v2.0 | Драка / Погоня</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #ff4444;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b0000, #4a0000);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #ff4444;
+            position: relative;
+        }
+
+        .header h1 {
+            color: #ff6666;
+            font-size: 24px;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #ff4444;
+            color: #ff8888;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #ff4444;
+            color: white;
+        }
+
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            color: #ff8888;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            border: 1px solid #ff4444;
+        }
+
+        .game-screen {
+            padding: 25px;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #ff4444;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+            font-family: monospace;
+        }
+
+        .dialogue-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #ff4444;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #ff4444;
+            color: #ffaaaa;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #ff4444;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .history-note {
+            font-size: 11px;
+            color: #ff8888;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: #ff4444;
+            color: white;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+
+        .running-effect {
+            display: inline-block;
+            animation: run 0.2s infinite;
+        }
+
+        @keyframes run {
+            0% { transform: translateX(0px); }
+            50% { transform: translateX(5px); }
+            100% { transform: translateX(0px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v2.0 ⚡</h1>
+            <div class="version-tag">👊 ДРАКА / ПОГОНЯ</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box">
+                <div class="dialogue-text" id="dialogueText"></div>
+                <span id="cursor" class="typing-cursor"></span>
+            </div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============= ВЕРСИЯ 2.0: ДРАКА / ПОГОНЯ С ВЫБОРОМ =============
+
+        let gameState = {
+            step: 'start'
+        };
+
+        let isTyping = false;
+        let currentTimeout = null;
+
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        function clearOptions() {
+            document.getElementById('optionsContainer').innerHTML = '';
+        }
+
+        function addOption(text, onClick, historyNote = null) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+
+            let btnText = text;
+            if (historyNote) {
+                btnText = text + `\n📜 ${historyNote}`;
+            }
+            btn.innerHTML = btnText.replace(/\n/g, '<br>');
+            btn.style.whiteSpace = 'normal';
+            btn.style.textAlign = 'left';
+
+            btn.onclick = () => {
+                if (isTyping) return;
+                clearOptions();
+                onClick();
+            };
+            container.appendChild(btn);
+        }
+
+        function showRestartButton() {
+            const btn = document.getElementById('restartBtn');
+            btn.style.display = 'block';
+            btn.onclick = () => location.reload();
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').innerHTML = text;
+        }
+
+        // ============= СЦЕНАРИЙ С ВЫБОРОМ =============
+
+        function startGame() {
+            typeText("🏙️ ВЫХОД ИЗ ШКОЛЫ 🏙️\n\nДемид, Кирилл, Артём, Матвей и ты идёте ловить Игоря.\nОн наговорил гадостей про родню, теперь ответит.", () => {
+                setTimeout(() => {
+                    // ВЫБОР 1: Пойти на забив или нет
+                    typeText("Демид: 'Ну чё, ждем его пока выйдет'\nКирилл: 'Пока в школе'\nАртём: 'А похуй я с вами пойду'\nМатвей: 'Тоже еблан в школе.'", () => {
+                        setTimeout(() => {
+                            addOption("👊 ПОЙТИ НА ЗАБИВ", () => {
+                                typeText("Вы решили: идём ловить Игоря.\nДемид: 'Ждем кирилла с матвеем и идем'", () => {
+                                    setTimeout(() => nextScene1(), 500);
+                                });
+                            }, "⚡ НА САМОМ ДЕЛЕ: вы пошли ловить Игоря");
+
+                            addOption("😔 НЕ ПОЙТИ, ЗАБИТЬ", () => {
+                                typeText("Ты: 'Может пошел он нахуй'\nДемид: 'Да каво пошли'\nКирилл: 'Не, мы всё равно идём.'\nАртём: 'Да ты ахуел'", () => {
+                                    setTimeout(() => {
+                                        typeText("Вы всё-таки решили пойти. Демид: 'Погнали, ебнем этого рыгоря.'", () => {
+                                            setTimeout(() => nextScene1(), 500);
+                                        });
+                                    }, 500);
+                                });
+                            }, "❌ НА САМОМ ДЕЛЕ: вы всё равно пошли, потому что он перешёл границы");
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function nextScene1() {
+            typeText("Вы идёте к школе. Видите: Игорь выходит.", () => {
+                setTimeout(() => {
+                    typeText("С ним идут Настя и Яра. Они о чём-то болтают.\nИгорь что-то рассказывает, ржет как антон чагур.", () => {
+                        setTimeout(() => {
+                            typeText("Игорь (улыбается девушкам): 'Да вы чё, я не антон чагур,я никого не убивад'\nНастя и Яра смеются.", () => {
+                                setTimeout(() => {
+                                    // ВЫБОР 2: Напасть сейчас или подождать
+                                    typeText("Игорь с девушками идёт в сторону домов.\nВы идёте за ними на расстоянии.\nТы: 'Может, сейчас подойдём? Пока он рядом'", () => {
+                                        setTimeout(() => {
+                                            addOption("👊 НАПАСТЬ СЕЙЧАС (он в 10 метрах)", () => {
+                                                typeText("Ты: 'Погнали, сейчас его ебнем!'\nВы ускоряете шаг...\nНо Игорь замечает вас и напрягается.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("Настя: 'Игорь, чего ты оглядываешься?'\nЯра: 'Мне рассказали то что мне хотят лица набить'\nИгорь: 'Пойдемте быстрее'", () => {
+                                                            setTimeout(() => {
+                                                                typeText("Демид: 'Бля, он че то подозревает'", () => {
+                                                                    setTimeout(() => nextScene2(), 500);
+                                                                });
+                                                            }, 500);
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, "❌ НА САМОМ ДЕЛЕ: вы не напали, ждали пока девушки уйдут");
+
+                                            addOption("⏳ ПОДОЖДАТЬ, ПОКА ПРОВОДИТ ДЕВУШЕК", () => {
+                                                typeText("Ты: 'Не сейчас, пусть сначала их проводит. Потом разберёмся.'\nКирилл: 'Да, не при них же,меньше свидетелей.'\nАртём: 'Идём за ними, но не спалимся.'", () => {
+                                                    setTimeout(() => {
+                                                        typeText("Вы идёте за ними на расстоянии.\nИгорь иногда оглядывается — он напрягся.", () => {
+                                                            setTimeout(() => nextScene2(), 500);
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, "✅ НА САМОМ ДЕЛЕ: вы ждали, пока девушки уйдут домой");
+                                        }, 500);
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function nextScene2() {
+            typeText("Игорь и девушки идут по дворам. Вы следуете за ними.\nИгорь нервничает, постоянно оглядывается.", () => {
+                setTimeout(() => {
+                    typeText("Вы доходите до поворота. Дорога раздваивается:\n— Налево — короткий путь через арку\n— Направо — длинный путь вдоль домов", () => {
+                        setTimeout(() => {
+                            // ВЫБОР 3: Повернуть или идти прямо
+                            addOption("↩️ ПОВЕРНУТЬ НАЛЕВО (через арку)", () => {
+                                typeText("Вы сворачиваете в арку.\nТёмно, тихо. Вы ждёте, когда Игорь с девушками пройдёт дальше.", () => {
+                                    setTimeout(() => nextScene3(), 500);
+                                });
+                            }, "❓ НА САМОМ ДЕЛЕ: вы пошли прямо, но арка была вариантом");
+
+                            addOption("➡️ ПОЙТИ ПРЯМО (вдоль домов)", () => {
+                                typeText("Вы идёте прямо, держась теней.\nИгорь провожает девушек до калитки.", () => {
+                                    setTimeout(() => nextScene3(), 500);
+                                });
+                            }, "✅ НА САМОМ ДЕЛЕ: вы пошли прямо и ждали за углом дома");
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function nextScene3() {
+            typeText("Игорь провожает Настю и Яру до калитки.\nНастя: 'Ладно, мы пошли. Пока, Игорь.'\nЯра: 'Пока, не теряйся.'\nДевушки заходят домой.", () => {
+                setTimeout(() => {
+                    typeText("Игорь остаётся один. Смотрит по сторонам, потом идёт дальше.", () => {
+                        setTimeout(() => {
+                            // ВЫБОР 4: Выйти из угла или ещё посидеть
+                            typeText("Вы стоите за углом дома. Игорь прошёл мимо.\nДемид: 'Пошли'\nКирилл: 'Го'", () => {
+                                setTimeout(() => {
+                                    addOption("🚶‍♂️ ВЫЙТИ ИЗ-ЗА УГЛА И НАЧАТЬ ПОГОНЮ", () => {
+                                        typeText("Ты: 'Погнали!'\nВы выходите из укрытия и ускоряете шаг,первые идут артем,ты и матвей.\nИгорь оборачивается и видит вас!", () => {
+                                            setTimeout(() => nextScene4(), 500);
+                                        });
+                                    }, "✅ НА САМОМ ДЕЛЕ: вы вышли и начали погоню");
+
+                                    addOption("⏳ ЕЩЁ ПОСИДЕТЬ, ПОДОЖДАТЬ", () => {
+                                        typeText("Ты: 'Действуем работаем'\nВы начили бежать\nТы: 'Так он сейчас уйдёт вообще!'", () => {
+                                            setTimeout(() => {
+                                                typeText("Вы теряете надежду его догнать. Игорь уже далеко.\nКирилл: 'Всё, упустили...'\nНо тут Артём орет:да вы свиньи бежим'\nТы: 'Ещё не поздно! ПОГНАЛИ!'", () => {
+                                                    setTimeout(() => nextScene4(), 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    }, "⚠️ НА САМОМ ДЕЛЕ: вы чуть не упустили момент, но шанс ещё был");
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function nextScene4() {
+            typeText("🏃‍♂️ ПОГОНЯ НАЧАЛАСЬ! 🏃‍♂️\n\nДемид: 'ИГОРЬ! СТОЙ, ПИДОР!'\nТы: 'Стой, рыгорь, поговорить надо!'\nАртём: 'Ты за слова ответишь!'\nМатвей: 'Стоять, гнида!'", () => {
+                setTimeout(() => {
+                    typeText("Игорь оборачивается, видит вас и ДРАПАЕТ!\nОн несётся как ужаленный, даже не оглядывается.", () => {
+                        setTimeout(() => {
+                            // ВЫБОР 5: Бежать или идти
+                            typeText("Демид: 'ПОГНАЛИ БЫСТРЕЕ!'\nВы начинаете погоню.", () => {
+                                setTimeout(() => {
+                                    addOption("🏃‍♂️ БЕЖАТЬ ИЗО ВСЕХ СИЛ", () => {
+                                        typeText("Вы несётесь за ним, не жалея ног.\nИгорь впереди, но вы его догоняете!", () => {
+                                            setTimeout(() => {
+                                                typeText("Расстояние сокращается. Вы уже почти рядом.\nИгорь сворачивает и теряется.", () => {
+                                                    setTimeout(() => nextScene5(), 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    }, "⚡ НА САМОМ ДЕЛЕ: вы бежали, но Игорь убежал");
+
+                                    addOption("🚶‍♂️ ИДТИ БЫСТРЫМ ШАГОМ (экономить силы)", () => {
+                                        typeText("Ты: 'Не торопись, вымотаем его, он сам сдастся.'\nВы идёте быстрым шагом, держа Игоря в поле зрения.\nИгорь оглядывается, видит что вы не отстаёте, и бежит быстрее.", () => {
+                                            setTimeout(() => {
+                                                typeText("Он сворачивает за угол. Вы ускоряетесь.", () => {
+                                                    setTimeout(() => nextScene5(), 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    }, "❌ НА САМОМ ДЕЛЕ: вы бежали, потому что нужно было догонять");
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function nextScene5() {
+            typeText("Игорь перепрыгивает через забор, вы за ним.\nОн бежит через дворы, лавирует между машинами.\nВы уже выдыхаетесь, но не сдаётесь.", () => {
+                setTimeout(() => {
+                    typeText("Впереди развилка: налево — длинная прямая улица, направо — тёмный проход между домами.\nИгорь сворачивает направо.", () => {
+                        setTimeout(() => {
+                            typeText("Вы бежите за ним. Игорь уже близко, вы почти догнали!\nНо тут он резко ускоряется и скрывается в темноте.", () => {
+                                setTimeout(() => {
+                                    typeText("Вы выбегаете на другую улицу — Игоря нет. След простыл.\nДемид: 'Бля, ушёл...'\nКирилл: 'Быстро бегает, сука.'\nАртём: 'Струсил, как всегда.'\nМатвей: 'Потом поймаем, никуда не денется.'", () => {
+                                        setTimeout(() => {
+                                            // ВЫБОР 6: Итог
+                                            typeText("Вы останавливаетесь, тяжело дыша.\nДемид: 'Что будем делать? Ищем дальше или забиваем?'", () => {
+                                                setTimeout(() => {
+                                                    addOption("👊 БИТЬ ЕМУ ЛИЦО, КОГДА НАЙДЁМ", () => {
+                                                        typeText("Демид: 'Правильно, пусть получит за свои слова.'\nКирилл: 'Найдём его завтра.'\nАртём: 'Он теперь будет бояться ходить.'", () => {
+                                                            setTimeout(() => {
+                                                                typeText("Вы расходитесь по домам, но решаете, что завтра обязательно найдёте Игоря.\nОн струсил и убежал, но за слова ответит.", () => {
+                                                                    ending("Вариант: БИТЬ. Игорь струсил, но вы его найдёте.");
+                                                                });
+                                                            }, 500);
+                                                        });
+                                                    }, "❌ НА САМОМ ДЕЛЕ: вы хотели набить ему лицо, но он убежал");
+
+                                                    addOption("😔 ПУСТЬ ИДЁТ ДОМОЙ, ЗАБИТЬ", () => {
+                                                        typeText("Ты: 'Ладно, пусть идёт. Своё он уже получил — струсил и убежал. Всё равно ответит когда-нибудь.'\nДемид: 'Может, ты и прав... Он теперь в каждом дворе бояться будет.'", () => {
+                                                            setTimeout(() => {
+                                                                typeText("Вы расходитесь. Игорь струсил и убежал, не ответив за слова.\nНо он запомнит этот день.", () => {
+                                                                    ending("Вариант: ЗАБИТЬ. Игорь струсил и убежал, как трус.");
+                                                                });
+                                                            }, 500);
+                                                        });
+                                                    }, "✅ НА САМОМ ДЕЛЕ: вы хотели поймать, но он убежал. Осталось чувство недосказанности");
+                                                }, 500);
+                                            });
+                                        }, 500);
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function ending(message) {
+            typeText("\n[ИТОГ]\n\nИгорь струсил и убежал, не ответив за свои слова про родню.\nОн трус, который только языком работает.\n" + message, () => {
+                updateStatus("Итог: Игорь свалил как трус. Не ответил за слова. Но вы его ещё найдёте.");
+                showRestartButton();
+            });
+        }
+
+        // Запуск
+        startGame();
+    </script>
+</body>
+</html>

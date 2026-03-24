@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v3.0 | Гопник или Фембой?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #ff88aa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b0000, #4a0000);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #ff88aa;
+            position: relative;
+        }
+
+        .header h1 {
+            color: #ff6666;
+            font-size: 24px;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #ff88aa;
+            color: #ff8888;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #ff88aa;
+            color: white;
+        }
+
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ff88aa;
+            color: #4a0000;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            border: 1px solid #ff88aa;
+            font-weight: bold;
+        }
+
+        .game-screen {
+            padding: 25px;
+            min-height: 550px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #ff88aa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+            font-family: monospace;
+        }
+
+        .dialogue-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #ff88aa;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #ff88aa;
+            color: #ffaaaa;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #ff88aa;
+            color: #2a2a2a;
+            transform: translateX(5px);
+        }
+
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: #ff88aa;
+            color: #2a2a2a;
+            border-color: #ff88aa;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v3.0 ⚡</h1>
+            <div class="version-tag">🎀 ТРАНСФОРМАЦИЯ</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box">
+                <div class="dialogue-text" id="dialogueText"></div>
+                <span id="cursor" class="typing-cursor"></span>
+            </div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false;
+        let currentTimeout = null;
+
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        function clearOptions() {
+            document.getElementById('optionsContainer').innerHTML = '';
+        }
+
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => {
+                if (isTyping) return;
+                clearOptions();
+                onClick();
+            };
+            container.appendChild(btn);
+        }
+
+        function showRestartButton() {
+            const btn = document.getElementById('restartBtn');
+            btn.style.display = 'block';
+            btn.onclick = () => location.reload();
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').innerHTML = text;
+        }
+
+        // ============= ГЛАВНОЕ МЕНЮ =============
+        function startGame() {
+            typeText("🎭 ИСТОРИЯ ТРАНСФОРМАЦИИ РЫГОРЯ 🎭\n\nИгорь долго был злым, оскорблял всех, убегал от пацанов...\nНо однажды он понял: так дальше жить нельзя.\n\nПеред ним встал важный выбор, который определит его судьбу навсегда.", () => {
+                setTimeout(() => {
+                    typeText("✨ СУДЬБОНОСНЫЙ ВЫБОР ✨\n\nКем станет Рыгорь?", () => {
+                        setTimeout(() => {
+                            addOption("🧥 ГОПНИКОМ\n(Жить по понятиям, ходить в спортивном костюме)", () => {
+                                gopnikChoice1();
+                            });
+                            addOption("🎀 НАСТОЯЩИМ ФЕМБОЕМ\n(Найти себя, стринги, квадробика)", () => {
+                                femboyChoice1();
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        // ==================== ПУТЬ ГОПНИКА ====================
+        let gopnikAlcohol = 0;
+        let gopnikAggression = 0;
+
+        function gopnikChoice1() {
+            typeText("🧥 ПУТЬ ГОПНИКА 🧥\n\nИгорь купил спортивный костюм, семечки, научился говорить 'чё', 'по понятиям' и 'за шкирку возьму'.", () => {
+                setTimeout(() => {
+                    typeText("Вечер. Игорь гуляет по району. К нему подходят местные гопники:\n\nГопник Серёга: 'Слышь, пацан, с нами пойдёшь? У нас тут дело есть. Но сначала — пивасик за уважение.'", () => {
+                        setTimeout(() => {
+                            typeText("Что выберет Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("🍺 ВЫПИТЬ ПИВО С ГОПНИКАМИ", () => {
+                                        gopnikAlcohol += 2;
+                                        typeText("Игорь: 'А чё, пацаны, за уважение можно!'\nОн выпил бутылку. Гопники зауважали.\nСерёга: 'Норм пацан! Пойдём с нами, дело есть.'", () => {
+                                            setTimeout(() => gopnikChoice2(), 500);
+                                        });
+                                    });
+                                    addOption("🚫 ОТКАЗАТЬСЯ (сказать, что не пьёт)", () => {
+                                        gopnikAlcohol -= 1;
+                                        typeText("Игорь: 'Не, пацаны, я пас. Не пью я.'\nСерёга скривился: 'Слабак... Ну ладно, иди тогда. Но если чё — не в обиде.'\nГопники ушли. Игорь остался один.", () => {
+                                            setTimeout(() => {
+                                                typeText("Игорь пошёл домой. Гопники его больше не звали.\nОн так и остался одиноким гопником без компании.\nЧерез месяц его избили другие гопники за то, что 'не уважал понятия'.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("⚰️ ФИНАЛ: ИГОРЬ ПОГИБ ОТ РУК ДРУГИХ ГОПНИКОВ ⚰️\n\nОн не вписался в компанию, но всё равно выбрал путь агрессии.\nОдиночка в гоп-мире выживает редко.", () => {
+                                                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь не вписался в компанию и погиб");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function gopnikChoice2() {
+            typeText("Гопники ведут Игоря за гаражи. Там уже стоит пара человек.\nСерёга: 'Слушай сюда. Тут один должник есть, Петюн. Не платит. Пойдёшь с нами — покажешь себя.'", () => {
+                setTimeout(() => {
+                    typeText("Что сделает Игорь?", () => {
+                        setTimeout(() => {
+                            addOption("👊 ПОЙТИ НА РАЗБОРКУ", () => {
+                                gopnikAggression += 2;
+                                typeText("Игорь: 'Погнали, пацаны! Пусть знает, как не платить!'\nОн пошёл с гопниками к Петюну.", () => {
+                                    setTimeout(() => gopnikChoice3(), 500);
+                                });
+                            });
+                            addOption("🏃‍♂️ СДЕЛАТЬ ОТМАЗКУ И УЙТИ", () => {
+                                typeText("Игорь: 'Слышь, пацаны, я ща не могу, мать звонила, говорит домой надо срочно.'\nСерёга: 'А, понял... Ну иди, ссыкун. Мы сами разберёмся.'", () => {
+                                    setTimeout(() => {
+                                        typeText("Игорь ушёл. Гопники больше его не звали.\nОн так и остался один. Через неделю его ограбили на районе — свои же, за то что 'ссыт'.", () => {
+                                            setTimeout(() => {
+                                                typeText("⚰️ ФИНАЛ: ИГОРЬ СТАЛ ИЗГОЕМ И ПОГИБ ⚰️\n\nТрусость в гоп-мире не прощают.", () => {
+                                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь струсил и стал изгоем");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function gopnikChoice3() {
+            typeText("За гаражами уже ждут. Петюн стоит, трясётся.\nСерёга: 'Ну чё, Игорь, покажи себя! Дай ему в табло!'", () => {
+                setTimeout(() => {
+                    typeText("Что сделает Игорь?", () => {
+                        setTimeout(() => {
+                            addOption("👊 УДАРИТЬ ПЕТЮНА", () => {
+                                gopnikAggression += 2;
+                                typeText("Игорь размахнулся и ударил.\nПетюн упал.\nСерёга: 'Молодец, пацан! Теперь ты свой!'\nНо тут из-за угла выбежали друзья Петюна.", () => {
+                                    setTimeout(() => {
+                                        typeText("Началась драка. Игорь бился как мог, но силы были неравны.\nЕго сильно ударили по голове, и он упал за гаражами.", () => {
+                                            setTimeout(() => {
+                                                typeText("⚰️ ФИНАЛ: ИГОРЬ ПОГИБ ЗА ГАРАЖАМИ ⚰️\n\nОн выбрал агрессию, и это его сгубило.\nГопники не живут долго.", () => {
+                                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь погиб в драке за гаражами");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                            addOption("🤝 НЕ СТАЛ БИТЬ, ПОПРОБОВАЛ ПО-НОРМАЛЬНОМУ", () => {
+                                typeText("Игорь: 'Слышь, пацаны, может не надо? Пусть отдаст долг миром.'\nСерёга: 'Ты чё, баба? А ну бей, сказали!'\nИгорь отказался.", () => {
+                                    setTimeout(() => {
+                                        typeText("Гопники разозлились: 'Ты чё, против нас пошёл? А ну пошли отсюда!'\nИгоря выгнали из компании. Больше его никуда не звали.", () => {
+                                            setTimeout(() => {
+                                                typeText("Через месяц Игоря нашли избитым в подворотне.\nСвои же и побили — за то что 'предатель'.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("⚰️ ФИНАЛ: ИГОРЬ ПОГИБ ОТ РУК БЫВШИХ ПАЦАНОВ ⚰️\n\nОн не стал бить, но его всё равно не простили.", () => {
+                                                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь предал гопников и погиб");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        // ==================== ПУТЬ ФЕМБОЯ ====================
+        let femboyConfidence = 0;
+        let femboyStyle = 0;
+
+        function femboyChoice1() {
+            typeText("🎀 ПУТЬ НАСТОЯЩЕГО ФЕМБОЯ 🎀\n\nИгорь решил: хватит быть злым. Пора найти себя настоящего.\nОн зашёл в секонд-хенд и смотрит на розовую толстовку.", () => {
+                setTimeout(() => {
+                    typeText("Продавщица: 'Молодой человек, примерите? Очень идёт к вашим глазам.'\nИгорь мнётся. Он никогда не носил розовое.", () => {
+                        setTimeout(() => {
+                            typeText("Что сделает Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("🎀 КУПИТЬ РОЗОВУЮ ТОЛСТОВКУ", () => {
+                                        femboyConfidence += 2;
+                                        typeText("Игорь: 'Давайте... попробую.'\nОн надел розовую толстовку. Ему понравилось.\nВ зеркале он увидел себя — мягкого, спокойного.", () => {
+                                            setTimeout(() => femboyChoice2(), 500);
+                                        });
+                                    });
+                                    addOption("😔 НЕ ПОКУПАТЬ, СТЫДНО", () => {
+                                        femboyConfidence -= 1;
+                                        typeText("Игорь: 'Не, не... Это не моё.'\nОн вышел из магазина. Всю ночь думал о той толстовке.\nНо так и не решился.", () => {
+                                            setTimeout(() => {
+                                                typeText("Игорь остался в старых вещах. Ничего не изменилось.\nОн так и не нашёл себя. Остался злым и одиноким.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("😔 ФИНАЛ: ИГОРЬ НЕ СМЕЛ ИЗМЕНИТЬСЯ 😔\n\nОн боялся быть собой. Так и остался несчастным Рыгорем.", () => {
+                                                            updateStatus("❌ НЕЙТРАЛЬНАЯ КОНЦОВКА: Игорь не решился на изменения");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function femboyChoice2() {
+            typeText("В новой розовой толстовке Игорь пошёл в парк.\nТам на скамейке сидит девочка с яркими прядями в волосах. Она громко рассказывает коту про устройство вселенной.", () => {
+                setTimeout(() => {
+                    typeText("Девочка замечает Игоря: 'Ого! Розовый! Классная толстовка! А ты кто?'\nИгорь смущается.", () => {
+                        setTimeout(() => {
+                            typeText("Что сделает Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("💬 ПОДОЙТИ ПОЗНАКОМИТЬСЯ", () => {
+                                        femboyConfidence += 2;
+                                        typeText("Игорь: 'Привет... Я Игорь. Толстовку сегодня купил. Нравится?'\nДевочка: 'Очень! Меня Алиса. У меня СДВГ, я постоянно ношусь, но это круто! Давай дружить?'", () => {
+                                            setTimeout(() => femboyChoice3(), 500);
+                                        });
+                                    });
+                                    addOption("🏃‍♂️ ПРОЙТИ МИМО, ЗАСТЫДИТЬСЯ", () => {
+                                        femboyConfidence -= 1;
+                                        typeText("Игорь опустил голову и прошёл мимо.\nДевочка посмотрела ему вслед, но ничего не сказала.\nИгорь так и не нашёл друзей.", () => {
+                                            setTimeout(() => {
+                                                typeText("Он остался один. Розовая толстовка так и висела в шкафу.\nИгорь снова стал злым. Но теперь ему было ещё и грустно.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("😔 ФИНАЛ: ИГОРЬ НЕ РЕШИЛСЯ НА ДРУЖБУ 😔\n\nОн был так близко к счастью, но струсил.", () => {
+                                                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь не подошёл к девочке и остался один");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function femboyChoice3() {
+            typeText("Алиса: 'Слушай, а ты знаешь про квадробику? Это когда бегаешь на четвереньках, как животное! Я тебя научу, хочешь?'\nИгорь удивлён.", () => {
+                setTimeout(() => {
+                    typeText("Что ответит Игорь?", () => {
+                        setTimeout(() => {
+                            addOption("🏃‍♂️ СОГЛАСИТЬСЯ НА КВАДРОБИКУ", () => {
+                                femboyStyle += 2;
+                                typeText("Игорь: 'Давай, попробую...'\nАлиса научила его бегать на четвереньках, прыгать, носить маску лисы.\nИгорь впервые чувствовал себя свободным!", () => {
+                                    setTimeout(() => femboyChoice4(), 500);
+                                });
+                            });
+                            addOption("🤔 ОТКАЗАТЬСЯ, СКАЗАТЬ ЧТО СТРАННО", () => {
+                                typeText("Игорь: 'Не, это странно как-то...'\nАлиса: 'Ну как хочешь...'\nОни остались просто знакомыми, но близкой дружбы не вышло.", () => {
+                                    setTimeout(() => {
+                                        typeText("Игорь так и не раскрылся. Розовая толстовка осталась просто вещью.\nОн не стал фембоем, не нашёл себя.", () => {
+                                            setTimeout(() => {
+                                                typeText("😔 ФИНАЛ: ИГОРЬ НЕ СТАЛ КВАДРОБЕРОМ 😔\n\nОн побоялся быть странным. А зря.", () => {
+                                                    updateStatus("❌ НЕЙТРАЛЬНАЯ КОНЦОВКА: Игорь не раскрыл свой потенциал");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function femboyChoice4() {
+            typeText("После нескольких дней квадробики Алиса говорит:\n'Слушай, Игорь, ты крутой! Но настоящий фембой должен иметь стиль. Я купила тебе подарок. Не бойся, попробуй!'", () => {
+                setTimeout(() => {
+                    typeText("Алиса протягивает пакет. Там — стильные стринги.\nИгорь краснеет.", () => {
+                        setTimeout(() => {
+                            typeText("Что сделает Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("🎀 НАДЕТЬ СТРИНГИ (стать настоящим фембоем)", () => {
+                                        femboyStyle += 2;
+                                        typeText("Игорь: 'Давай... я попробую.'\nОн надел. Ему было немного стыдно, но Алиса поддержала.\n'Ты выглядишь отлично! Теперь ты настоящий фембой!'\nИгорь улыбнулся. Впервые за долгое время он был счастлив.", () => {
+                                            setTimeout(() => {
+                                                typeText("✨ СЧАСТЛИВЫЙ ФИНАЛ ✨\n\nИгорь стал фембоем. У него появилась настоящая подруга с СДВГ.\nОни вместе бегают на четвереньках в парке, он носит стринги под розовой толстовкой и больше никого не оскорбляет.\n\nРыгорь мёртв. Теперь он просто Игорь. Счастливый.", () => {
+                                                    updateStatus("✅ ХОРОШАЯ КОНЦОВКА: Игорь стал фембоем, подружился с Алисой, носит стринги и счастлив!");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                    addOption("😳 ОТКАЗАТЬСЯ (слишком стыдно)", () => {
+                                        typeText("Игорь: 'Не, Алис, это уже слишком... Мне стыдно.'\nАлиса: 'Ну как хочешь... Но ты всё равно крутой.'\nОни остались друзьями, но Игорь так и не стал настоящим фембоем.", () => {
+                                            setTimeout(() => {
+                                                typeText("Игорь остался где-то посередине. Он нашёл друга, но не нашёл себя до конца.\nРозовая толстовка — да. Квадробика — да. А стринги — нет.\n\nМожет быть, когда-нибудь он решится.", () => {
+                                                    updateStatus("🎀 НЕЙТРАЛЬНАЯ КОНЦОВКА: Игорь нашёл друга, но не стал полностью собой");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        // Запуск
+        startGame();
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v3.0 | Гопник или Фембой?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #ff88aa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b0000, #4a0000);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #ff88aa;
+            position: relative;
+        }
+
+        .header h1 {
+            color: #ff6666;
+            font-size: 24px;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #ff88aa;
+            color: #ff8888;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #ff88aa;
+            color: white;
+        }
+
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ff88aa;
+            color: #4a0000;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            border: 1px solid #ff88aa;
+            font-weight: bold;
+        }
+
+        .game-screen {
+            padding: 25px;
+            min-height: 550px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #ff88aa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+            font-family: monospace;
+        }
+
+        .dialogue-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #ff88aa;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #ff88aa;
+            color: #ffaaaa;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #ff88aa;
+            color: #2a2a2a;
+            transform: translateX(5px);
+        }
+
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: #ff88aa;
+            color: #2a2a2a;
+            border-color: #ff88aa;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v3.0 ⚡</h1>
+            <div class="version-tag">🎀 ТРАНСФОРМАЦИЯ</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box">
+                <div class="dialogue-text" id="dialogueText"></div>
+                <span id="cursor" class="typing-cursor"></span>
+            </div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false;
+        let currentTimeout = null;
+
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        function clearOptions() {
+            document.getElementById('optionsContainer').innerHTML = '';
+        }
+
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => {
+                if (isTyping) return;
+                clearOptions();
+                onClick();
+            };
+            container.appendChild(btn);
+        }
+
+        function showRestartButton() {
+            const btn = document.getElementById('restartBtn');
+            btn.style.display = 'block';
+            btn.onclick = () => location.reload();
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').innerHTML = text;
+        }
+
+        // ============= ГЛАВНОЕ МЕНЮ =============
+        function startGame() {
+            typeText("🎭 ИСТОРИЯ ТРАНСФОРМАЦИИ РЫГОРЯ 🎭\n\nИгорь долго был злым, оскорблял всех, убегал от пацанов...\nНо однажды он понял: так дальше жить нельзя.\n\nПеред ним встал важный выбор, который определит его судьбу навсегда.", () => {
+                setTimeout(() => {
+                    typeText("✨ СУДЬБОНОСНЫЙ ВЫБОР ✨\n\nКем станет Рыгорь?", () => {
+                        setTimeout(() => {
+                            addOption("🧥 ГОПНИКОМ\n(Жить по понятиям, ходить в спортивном костюме)", () => {
+                                gopnikChoice1();
+                            });
+                            addOption("🎀 НАСТОЯЩИМ ФЕМБОЕМ\n(Найти себя, стринги, квадробика)", () => {
+                                femboyChoice1();
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        // ==================== ПУТЬ ГОПНИКА ====================
+        let gopnikAlcohol = 0;
+        let gopnikAggression = 0;
+
+        function gopnikChoice1() {
+            typeText("🧥 ПУТЬ ГОПНИКА 🧥\n\nИгорь купил спортивный костюм, семечки, научился говорить 'чё', 'по понятиям' и 'за шкирку возьму'.", () => {
+                setTimeout(() => {
+                    typeText("Вечер. Игорь гуляет по району. К нему подходят местные гопники:\n\nГопник Серёга: 'Слышь, пацан, с нами пойдёшь? У нас тут дело есть. Но сначала — пивасик за уважение.'", () => {
+                        setTimeout(() => {
+                            typeText("Что выберет Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("🍺 ВЫПИТЬ ПИВО С ГОПНИКАМИ", () => {
+                                        gopnikAlcohol += 2;
+                                        typeText("Игорь: 'А чё, пацаны, за уважение можно!'\nОн выпил бутылку. Гопники зауважали.\nСерёга: 'Норм пацан! Пойдём с нами, дело есть.'", () => {
+                                            setTimeout(() => gopnikChoice2(), 500);
+                                        });
+                                    });
+                                    addOption("🚫 ОТКАЗАТЬСЯ (сказать, что не пьёт)", () => {
+                                        gopnikAlcohol -= 1;
+                                        typeText("Игорь: 'Не, пацаны, я пас. Не пью я.'\nСерёга скривился: 'Слабак... Ну ладно, иди тогда. Но если чё — не в обиде.'\nГопники ушли. Игорь остался один.", () => {
+                                            setTimeout(() => {
+                                                typeText("Игорь пошёл домой. Гопники его больше не звали.\nОн так и остался одиноким гопником без компании.\nЧерез месяц его избили другие гопники за то, что 'не уважал понятия'.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("⚰️ ФИНАЛ: ИГОРЬ ПОГИБ ОТ РУК ДРУГИХ ГОПНИКОВ ⚰️\n\nОн не вписался в компанию, но всё равно выбрал путь агрессии.\nОдиночка в гоп-мире выживает редко.", () => {
+                                                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь не вписался в компанию и погиб");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function gopnikChoice2() {
+            typeText("Гопники ведут Игоря за гаражи. Там уже стоит пара человек.\nСерёга: 'Слушай сюда. Тут один должник есть, Петюн. Не платит. Пойдёшь с нами — покажешь себя.'", () => {
+                setTimeout(() => {
+                    typeText("Что сделает Игорь?", () => {
+                        setTimeout(() => {
+                            addOption("👊 ПОЙТИ НА РАЗБОРКУ", () => {
+                                gopnikAggression += 2;
+                                typeText("Игорь: 'Погнали, пацаны! Пусть знает, как не платить!'\nОн пошёл с гопниками к Петюну.", () => {
+                                    setTimeout(() => gopnikChoice3(), 500);
+                                });
+                            });
+                            addOption("🏃‍♂️ СДЕЛАТЬ ОТМАЗКУ И УЙТИ", () => {
+                                typeText("Игорь: 'Слышь, пацаны, я ща не могу, мать звонила, говорит домой надо срочно.'\nСерёга: 'А, понял... Ну иди, ссыкун. Мы сами разберёмся.'", () => {
+                                    setTimeout(() => {
+                                        typeText("Игорь ушёл. Гопники больше его не звали.\nОн так и остался один. Через неделю его ограбили на районе — свои же, за то что 'ссыт'.", () => {
+                                            setTimeout(() => {
+                                                typeText("⚰️ ФИНАЛ: ИГОРЬ СТАЛ ИЗГОЕМ И ПОГИБ ⚰️\n\nТрусость в гоп-мире не прощают.", () => {
+                                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь струсил и стал изгоем");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function gopnikChoice3() {
+            typeText("За гаражами уже ждут. Петюн стоит, трясётся.\nСерёга: 'Ну чё, Игорь, покажи себя! Дай ему в табло!'", () => {
+                setTimeout(() => {
+                    typeText("Что сделает Игорь?", () => {
+                        setTimeout(() => {
+                            addOption("👊 УДАРИТЬ ПЕТЮНА", () => {
+                                gopnikAggression += 2;
+                                typeText("Игорь размахнулся и ударил.\nПетюн упал.\nСерёга: 'Молодец, пацан! Теперь ты свой!'\nНо тут из-за угла выбежали друзья Петюна.", () => {
+                                    setTimeout(() => {
+                                        typeText("Началась драка. Игорь бился как мог, но силы были неравны.\nЕго сильно ударили по голове, и он упал за гаражами.", () => {
+                                            setTimeout(() => {
+                                                typeText("⚰️ ФИНАЛ: ИГОРЬ ПОГИБ ЗА ГАРАЖАМИ ⚰️\n\nОн выбрал агрессию, и это его сгубило.\nГопники не живут долго.", () => {
+                                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь погиб в драке за гаражами");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                            addOption("🤝 НЕ СТАЛ БИТЬ, ПОПРОБОВАЛ ПО-НОРМАЛЬНОМУ", () => {
+                                typeText("Игорь: 'Слышь, пацаны, может не надо? Пусть отдаст долг миром.'\nСерёга: 'Ты чё, баба? А ну бей, сказали!'\nИгорь отказался.", () => {
+                                    setTimeout(() => {
+                                        typeText("Гопники разозлились: 'Ты чё, против нас пошёл? А ну пошли отсюда!'\nИгоря выгнали из компании. Больше его никуда не звали.", () => {
+                                            setTimeout(() => {
+                                                typeText("Через месяц Игоря нашли избитым в подворотне.\nСвои же и побили — за то что 'предатель'.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("⚰️ ФИНАЛ: ИГОРЬ ПОГИБ ОТ РУК БЫВШИХ ПАЦАНОВ ⚰️\n\nОн не стал бить, но его всё равно не простили.", () => {
+                                                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь предал гопников и погиб");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        // ==================== ПУТЬ ФЕМБОЯ ====================
+        let femboyConfidence = 0;
+        let femboyStyle = 0;
+
+        function femboyChoice1() {
+            typeText("🎀 ПУТЬ НАСТОЯЩЕГО ФЕМБОЯ 🎀\n\nИгорь решил: хватит быть злым. Пора найти себя настоящего.\nОн зашёл в секонд-хенд и смотрит на розовую толстовку.", () => {
+                setTimeout(() => {
+                    typeText("Продавщица: 'Молодой человек, примерите? Очень идёт к вашим глазам.'\nИгорь мнётся. Он никогда не носил розовое.", () => {
+                        setTimeout(() => {
+                            typeText("Что сделает Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("🎀 КУПИТЬ РОЗОВУЮ ТОЛСТОВКУ", () => {
+                                        femboyConfidence += 2;
+                                        typeText("Игорь: 'Давайте... попробую.'\nОн надел розовую толстовку. Ему понравилось.\nВ зеркале он увидел себя — мягкого, спокойного.", () => {
+                                            setTimeout(() => femboyChoice2(), 500);
+                                        });
+                                    });
+                                    addOption("😔 НЕ ПОКУПАТЬ, СТЫДНО", () => {
+                                        femboyConfidence -= 1;
+                                        typeText("Игорь: 'Не, не... Это не моё.'\nОн вышел из магазина. Всю ночь думал о той толстовке.\nНо так и не решился.", () => {
+                                            setTimeout(() => {
+                                                typeText("Игорь остался в старых вещах. Ничего не изменилось.\nОн так и не нашёл себя. Остался злым и одиноким.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("😔 ФИНАЛ: ИГОРЬ НЕ СМЕЛ ИЗМЕНИТЬСЯ 😔\n\nОн боялся быть собой. Так и остался несчастным Рыгорем.", () => {
+                                                            updateStatus("❌ НЕЙТРАЛЬНАЯ КОНЦОВКА: Игорь не решился на изменения");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function femboyChoice2() {
+            typeText("В новой розовой толстовке Игорь пошёл в парк.\nТам на скамейке сидит девочка с яркими прядями в волосах. Она громко рассказывает коту про устройство вселенной.", () => {
+                setTimeout(() => {
+                    typeText("Девочка замечает Игоря: 'Ого! Розовый! Классная толстовка! А ты кто?'\nИгорь смущается.", () => {
+                        setTimeout(() => {
+                            typeText("Что сделает Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("💬 ПОДОЙТИ ПОЗНАКОМИТЬСЯ", () => {
+                                        femboyConfidence += 2;
+                                        typeText("Игорь: 'Привет... Я Игорь. Толстовку сегодня купил. Нравится?'\nДевочка: 'Очень! Меня Алиса. У меня СДВГ, я постоянно ношусь, но это круто! Давай дружить?'", () => {
+                                            setTimeout(() => femboyChoice3(), 500);
+                                        });
+                                    });
+                                    addOption("🏃‍♂️ ПРОЙТИ МИМО, ЗАСТЫДИТЬСЯ", () => {
+                                        femboyConfidence -= 1;
+                                        typeText("Игорь опустил голову и прошёл мимо.\nДевочка посмотрела ему вслед, но ничего не сказала.\nИгорь так и не нашёл друзей.", () => {
+                                            setTimeout(() => {
+                                                typeText("Он остался один. Розовая толстовка так и висела в шкафу.\nИгорь снова стал злым. Но теперь ему было ещё и грустно.", () => {
+                                                    setTimeout(() => {
+                                                        typeText("😔 ФИНАЛ: ИГОРЬ НЕ РЕШИЛСЯ НА ДРУЖБУ 😔\n\nОн был так близко к счастью, но струсил.", () => {
+                                                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь не подошёл к девочке и остался один");
+                                                            showRestartButton();
+                                                        });
+                                                    }, 500);
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function femboyChoice3() {
+            typeText("Алиса: 'Слушай, а ты знаешь про квадробику? Это когда бегаешь на четвереньках, как животное! Я тебя научу, хочешь?'\nИгорь удивлён.", () => {
+                setTimeout(() => {
+                    typeText("Что ответит Игорь?", () => {
+                        setTimeout(() => {
+                            addOption("🏃‍♂️ СОГЛАСИТЬСЯ НА КВАДРОБИКУ", () => {
+                                femboyStyle += 2;
+                                typeText("Игорь: 'Давай, попробую...'\nАлиса научила его бегать на четвереньках, прыгать, носить маску лисы.\nИгорь впервые чувствовал себя свободным!", () => {
+                                    setTimeout(() => femboyChoice4(), 500);
+                                });
+                            });
+                            addOption("🤔 ОТКАЗАТЬСЯ, СКАЗАТЬ ЧТО СТРАННО", () => {
+                                typeText("Игорь: 'Не, это странно как-то...'\nАлиса: 'Ну как хочешь...'\nОни остались просто знакомыми, но близкой дружбы не вышло.", () => {
+                                    setTimeout(() => {
+                                        typeText("Игорь так и не раскрылся. Розовая толстовка осталась просто вещью.\nОн не стал фембоем, не нашёл себя.", () => {
+                                            setTimeout(() => {
+                                                typeText("😔 ФИНАЛ: ИГОРЬ НЕ СТАЛ КВАДРОБЕРОМ 😔\n\nОн побоялся быть странным. А зря.", () => {
+                                                    updateStatus("❌ НЕЙТРАЛЬНАЯ КОНЦОВКА: Игорь не раскрыл свой потенциал");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    }, 500);
+                                });
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function femboyChoice4() {
+            typeText("После нескольких дней квадробики Алиса говорит:\n'Слушай, Игорь, ты крутой! Но настоящий фембой должен иметь стиль. Я купила тебе подарок. Не бойся, попробуй!'", () => {
+                setTimeout(() => {
+                    typeText("Алиса протягивает пакет. Там — стильные стринги.\nИгорь краснеет.", () => {
+                        setTimeout(() => {
+                            typeText("Что сделает Игорь?", () => {
+                                setTimeout(() => {
+                                    addOption("🎀 НАДЕТЬ СТРИНГИ (стать настоящим фембоем)", () => {
+                                        femboyStyle += 2;
+                                        typeText("Игорь: 'Давай... я попробую.'\nОн надел. Ему было немного стыдно, но Алиса поддержала.\n'Ты выглядишь отлично! Теперь ты настоящий фембой!'\nИгорь улыбнулся. Впервые за долгое время он был счастлив.", () => {
+                                            setTimeout(() => {
+                                                typeText("✨ СЧАСТЛИВЫЙ ФИНАЛ ✨\n\nИгорь стал фембоем. У него появилась настоящая подруга с СДВГ.\nОни вместе бегают на четвереньках в парке, он носит стринги под розовой толстовкой и больше никого не оскорбляет.\n\nРыгорь мёртв. Теперь он просто Игорь. Счастливый.", () => {
+                                                    updateStatus("✅ ХОРОШАЯ КОНЦОВКА: Игорь стал фембоем, подружился с Алисой, носит стринги и счастлив!");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                    addOption("😳 ОТКАЗАТЬСЯ (слишком стыдно)", () => {
+                                        typeText("Игорь: 'Не, Алис, это уже слишком... Мне стыдно.'\nАлиса: 'Ну как хочешь... Но ты всё равно крутой.'\nОни остались друзьями, но Игорь так и не стал настоящим фембоем.", () => {
+                                            setTimeout(() => {
+                                                typeText("Игорь остался где-то посередине. Он нашёл друга, но не нашёл себя до конца.\nРозовая толстовка — да. Квадробика — да. А стринги — нет.\n\nМожет быть, когда-нибудь он решится.", () => {
+                                                    updateStatus("🎀 НЕЙТРАЛЬНАЯ КОНЦОВКА: Игорь нашёл друга, но не стал полностью собой");
+                                                    showRestartButton();
+                                                });
+                                            }, 500);
+                                        });
+                                    });
+                                }, 500);
+                            });
+                        }, 500);
+                    });
+                }, 500);
+            });
+        }
+
+        // Запуск
+        startGame();
+    </script>
+</body>
+</html>

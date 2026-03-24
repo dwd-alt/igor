@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор Ужасного Игоря | Выбор версии</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .menu-container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #ff4444;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b0000, #4a0000);
+            padding: 30px;
+            text-align: center;
+            border-bottom: 3px solid #ff4444;
+        }
+
+        .header h1 {
+            color: #ff6666;
+            font-size: 32px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #ff9999;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .igor-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #ff4444;
+            margin-bottom: 15px;
+        }
+
+        .versions-grid {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .version-card {
+            background: #1a1a1a;
+            border: 1px solid #ff4444;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .version-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(255,68,68,0.3);
+            border-color: #ff8888;
+        }
+
+        .version-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6666;
+            margin-bottom: 10px;
+        }
+
+        .version-name {
+            font-size: 20px;
+            color: #ffaaaa;
+            margin-bottom: 10px;
+        }
+
+        .version-desc {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+
+        .footer {
+            background: #0a0a0a;
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .blood-effect {
+            position: fixed;
+            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 70%, rgba(255,0,0,0.1) 100%);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="blood-effect"></div>
+    <div class="menu-container">
+        <div class="header">
+            <img src="images/igor.png" class="igor-avatar" alt="Игорь" onerror="this.src='https://via.placeholder.com/100/ff4444/ffffff?text=ИГОРЬ'">
+            <h1>⚡ СИМУЛЯТОР УЖАСНОГО ИГОРЯ ⚡</h1>
+            <p>Выбери версию игры | Рыгорь | Срыгорь | Мегасрыгрь</p>
+        </div>
+
+        <div class="versions-grid" id="versionsGrid">
+            <!-- Версии будут добавляться сюда -->
+        </div>
+
+        <div class="footer">
+            🐺 Новые версии выходят каждую неделю | Тыкай по Игорю, если хочешь добавить свою версию
+        </div>
+    </div>
+
+    <script>
+        // Список версий (будешь добавлять сюда новые)
+        const versions = [
+            {
+                number: "v1.0",
+                name: "Игорь в школе",
+                desc: "Оригинальный Игорь. Оскорбляет родню, угрожает смертью.",
+                file: "1v.html",
+                badge: "🐺 ОРИГИНАЛ"
+            },
+            {
+                number: "v2.0",
+                name: "Забивчик жесткий",
+                desc: "ХЗ",
+                file: "2v.html",
+                badge: "старая"
+            },
+            {
+                number: "v3.0",
+                name: "Игорь фембой или гопник",
+                desc: "Игорь ровный пацанчик как и пульс",
+                file: "3v.html",
+                badge: "Новая"
+            },
+            {
+                number: "v4.0",
+                name: "Пока нет",
+                desc: "Пока нет",
+                file: "4v.html",
+                badge: "Пока нет"
+            },
+            {
+                number: "v5.0",
+                name: "Пока нет",
+                desc: "Пока нет",
+                file: "5v.html",
+                badge: "Пока нет"
+            }
+        ];
+
+        // Функция добавления новой версии (для будущих обновлений)
+        function addVersion(version) {
+            versions.push(version);
+            renderVersions();
+        }
+
+        function renderVersions() {
+            const grid = document.getElementById('versionsGrid');
+            grid.innerHTML = '';
+
+            versions.forEach(version => {
+                const card = document.createElement('a');
+                card.className = 'version-card';
+                card.href = version.file;
+                card.innerHTML = `
+                    <div class="version-number">${version.number}</div>
+                    <div class="version-name">${version.name}</div>
+                    <div class="version-desc">${version.desc}</div>
+                    <span class="version-badge">${version.badge}</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        renderVersions();
+
+        // Консоль для добавления новых версий (для разработчика)
+        console.log('Добавить новую версию: addVersion({ number: "v6.0", name: "НАЗВАНИЕ", desc: "ОПИСАНИЕ", file: "6v.html", badge: "🏷️ ТЕГ" })');
+    </script>
+</body>
+</html>

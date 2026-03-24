@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: igory-game
+    runtime: static
+    repo: https://github.com/dwd-alt/igor
+    branch: main
+    buildCommand: ""
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v4.0 | Игорь и Стринги</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid #ff88aa;
+        }
+        .header {
+            background: linear-gradient(135deg, #8b0000, #4a0000);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #ff88aa;
+            position: relative;
+        }
+        .header h1 { color: #ff6666; font-size: 24px; }
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #ff88aa;
+            color: #ff8888;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .back-btn:hover { background: #ff88aa; color: white; }
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ff88aa;
+            color: #4a0000;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .game-screen { padding: 25px; min-height: 550px; display: flex; flex-direction: column; }
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #ff88aa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+        }
+        .dialogue-text { white-space: pre-wrap; word-wrap: break-word; }
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #ff88aa;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        @keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+        .options { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #ff88aa;
+            color: #ffaaaa;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .option-btn:hover { background: #ff88aa; color: #2a2a2a; transform: translateX(5px); }
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .restart-btn:hover { background: #ff88aa; color: #2a2a2a; }
+        .status { margin-top: 15px; padding: 10px; background: #1a1a1a; border-radius: 8px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v4.0 ⚡</h1>
+            <div class="version-tag">👙 МИСС ВЕСНА</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box"><div class="dialogue-text" id="dialogueText"></div><span id="cursor" class="typing-cursor"></span></div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false, currentTimeout = null;
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+        function clearOptions() { document.getElementById('optionsContainer').innerHTML = ''; }
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => { if (isTyping) return; clearOptions(); onClick(); };
+            container.appendChild(btn);
+        }
+        function showRestartButton() {
+            document.getElementById('restartBtn').style.display = 'block';
+            document.getElementById('restartBtn').onclick = () => location.reload();
+        }
+        function updateStatus(text) { document.getElementById('statusText').innerHTML = text; }
+
+        let confidence = 0;
+        let support = 0;
+
+        function startGame() {
+            typeText("👙 МИСС ВЕСНА 👙\n\nИгорь уже фембой. Он носит стринги, дружит с Алисой, бегает на четвереньках.\nНо Алиса придумала новое испытание: 'Игорь, ты должен участвовать в школьном конкурсе \"Мисс Весна\"!'\n\nИгорь: 'Ты чё, меня же убьют там...'\nАлиса: 'Не ссы, я помогу! Давай, покажи всем, какой ты красивый!'", () => {
+                setTimeout(() => {
+                    typeText("Конкурс через неделю. Нужно подготовить:\n- Образ\n- Творческий номер\n- Ответы на вопросы жюри\n\nАлиса: 'С чего начнём?'", () => {
+                        setTimeout(() => showChoice1(), 500);
+                    });
+                }, 500);
+            });
+        }
+
+        function showChoice1() {
+            addOption("💃 ВЫБРАТЬ РОЗОВОЕ ПЛАТЬЕ", () => {
+                confidence += 2;
+                typeText("Игорь надел розовое платье с пайетками.\nАлиса: 'Вау! Ты выглядишь потрясающе!'\nИгорь покраснел, но ему понравилось.", () => { setTimeout(() => showChoice2(), 500); });
+            });
+            addOption("👖 НАДЕТЬ СТРИНГИ + РОЗОВУЮ ТОЛСТОВКУ", () => {
+                confidence += 1;
+                typeText("Игорь выбрал свой любимый образ: стринги и розовая толстовка.\nАлиса: 'Классика! Тоже круто! Но для конкурса надо что-то понаряднее...'", () => { setTimeout(() => showChoice2(), 500); });
+            });
+            addOption("😨 ОТКАЗАТЬСЯ, СЛИШКОМ СТРАШНО", () => {
+                typeText("Игорь: 'Не, Алис, я не смогу... Все будут смеяться.'\nАлиса: 'Эх, ну как хочешь...'\nИгорь так и не решился. Стринги так и лежат в шкафу.", () => {
+                    setTimeout(() => {
+                        typeText("😔 ФИНАЛ: ИГОРЬ НЕ РЕШИЛСЯ 😔\n\nОн испугался осуждения. Остался фембоем в душе, но не на публике.", () => {
+                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь не пошёл на конкурс");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            });
+        }
+
+        function showChoice2() {
+            typeText("День конкурса. Игорь волнуется за кулисами.\nАлиса: 'Выходи, ты справишься! Что будешь показывать?'", () => {
+                setTimeout(() => {
+                    addOption("🎤 СПЕТЬ ПЕСНЮ (песню про стринги)", () => {
+                        support += 2;
+                        typeText("Игорь вышел на сцену и запел: 'Стринги, стринги, я в них крутой, теперь я стал самим собой!'\nЗал в шоке. Потом кто-то захлопал. Алиса кричит из зала!", () => { setTimeout(() => showChoice3(), 500); });
+                    });
+                    addOption("🕺 ПОКАЗАТЬ КВАДРОБИКУ", () => {
+                        support += 1;
+                        typeText("Игорь встал на четвереньки и начал прыгать по сцене.\nЗал не понял. Но Алиса аплодировала. Несколько квадроберов в зале тоже зауважали.", () => { setTimeout(() => showChoice3(), 500); });
+                    });
+                    addOption("🤐 ПРОСТО ВЫЙТИ И ПОЗИРОВАТЬ", () => {
+                        typeText("Игорь вышел, покраснел, не знал куда деть руки.\nЗал засмеялся. Игорь убежал со сцены.", () => {
+                            setTimeout(() => {
+                                typeText("😔 ФИНАЛ: ИГОРЯ ОСМЕЯЛИ 😔\n\nОн не подготовил номер. Конкурс провалился.", () => {
+                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь опозорился на сцене");
+                                    showRestartButton();
+                                });
+                            }, 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function showChoice3() {
+            typeText("Жюри задаёт вопрос: 'Почему вы, молодой человек, участвуете в конкурсе для девушек?'", () => {
+                setTimeout(() => {
+                    addOption("💖 'Я ХОЧУ БЫТЬ СОБОЙ'", () => {
+                        confidence += 2;
+                        typeText("Игорь: 'Я долго притворялся злым. А теперь я просто хочу быть собой. И стринги — это круто.'\nЖюри переглянулись. Одна учительница заплакала.", () => { setTimeout(() => finale(), 500); });
+                    });
+                    addOption("😤 'А ЧЁ ТАКОГО? ДЕВУШКИ ТОЖЕ КРУТЫЕ'", () => {
+                        support += 1;
+                        typeText("Игорь: 'А чё такого? Девушки тоже крутые! Я хочу поддержать их.'\nЖюри улыбнулись. Ответ смелый, но немного грубоват.", () => { setTimeout(() => finale(), 500); });
+                    });
+                    addOption("😨 ПРОМОЛЧАТЬ, РАСТЕРЯТЬСЯ", () => {
+                        typeText("Игорь застыл, не мог выдавить ни слова.\nЖюри: 'Ну что ж, проходите...'\nБаллы снизили.", () => {
+                            setTimeout(() => {
+                                typeText("😔 ФИНАЛ: ИГОРЬ НЕ ПРОШЁЛ В ФИНАЛ 😔\n\nОн растерялся в ответственный момент. Алиса его поддержала, но победа ушла к другой.", () => {
+                                    updateStatus("❌ СРЕДНЯЯ КОНЦОВКА: Игорь не победил, но попробовал");
+                                    showRestartButton();
+                                });
+                            }, 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function finale() {
+            if (confidence >= 4 && support >= 2) {
+                typeText("🏆 ФИНАЛ КОНКУРСА 🏆\n\nЖюри совещается. Игорь держит Алису за руку.\nВедущий: 'И победительница конкурса \"Мисс Весна\"... ИГОРЬ!'\n\nЗал взорвался аплодисментами. Игорь плачет от счастья.\nАлиса: 'Я же говорила! Ты крутой!'\n\nИгорь получил корону и ленту победителя.", () => {
+                    setTimeout(() => {
+                        typeText("✨ СЧАСТЛИВЫЙ ФИНАЛ ✨\n\nИгорь стал символом школы. Теперь он носит стринги и корону.\nЕго уважают. Он больше не рыгорь. Он — Мисс Весна.", () => {
+                            updateStatus("✅ ХОРОШАЯ КОНЦОВКА: Игорь победил в конкурсе!");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            } else if (confidence >= 2) {
+                typeText("🏆 ФИНАЛ 🏆\n\nЖюри объявляет: 'Второе место занимает... ИГОРЬ!'\nИгорь расстроен, но Алиса радуется: 'Это круто! Ты в тройке!'\nИгорь получает грамоту и букет цветов.", () => {
+                    setTimeout(() => {
+                        typeText("🎀 ФИНАЛ: ВТОРОЕ МЕСТО 🎀\n\nИгорь не победил, но его заметили. Теперь он звезда соцсетей школы.", () => {
+                            updateStatus("🎀 СРЕДНЯЯ КОНЦОВКА: Второе место — тоже победа!");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            } else {
+                typeText("🏆 ФИНАЛ 🏆\n\nИгоря не выбрали. Он расстроен.\nАлиса: 'Ничего страшного! Ты смелый! В следующий раз победим!'\nИгорь улыбнулся. Главное — он попробовал.", () => {
+                    setTimeout(() => {
+                        typeText("💪 ФИНАЛ: ПОПРОБОВАЛ — УЖЕ ПОБЕДА 💪\n\nИгорь не выиграл, но перестал бояться осуждения.", () => {
+                            updateStatus("💪 НОРМАЛЬНАЯ КОНЦОВКА: Игорь победил свои страхи");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

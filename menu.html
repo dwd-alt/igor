@@ -19,16 +19,40 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255,0,0,0.1) 0%, transparent 50%);
+            animation: pulse 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
         }
 
         .menu-container {
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 0, 0, 0.3);
             overflow: hidden;
             border: 1px solid #ff4444;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(2px);
         }
 
         .header {
@@ -36,6 +60,49 @@
             padding: 30px;
             text-align: center;
             border-bottom: 3px solid #ff4444;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '🐺';
+            position: absolute;
+            font-size: 100px;
+            opacity: 0.1;
+            right: -20px;
+            top: -20px;
+            pointer-events: none;
+        }
+
+        .header::after {
+            content: '🎀';
+            position: absolute;
+            font-size: 80px;
+            opacity: 0.1;
+            left: -20px;
+            bottom: -20px;
+            pointer-events: none;
+        }
+
+        .igor-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #ff4444;
+            margin-bottom: 15px;
+            box-shadow: 0 0 20px rgba(255,68,68,0.5);
+            transition: transform 0.3s;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .igor-avatar:hover {
+            transform: scale(1.05);
         }
 
         .header h1 {
@@ -51,37 +118,71 @@
             margin-top: 10px;
         }
 
-        .igor-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #ff4444;
-            margin-bottom: 15px;
+        .stats-badge {
+            display: inline-block;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ff8888;
         }
 
         .versions-grid {
             padding: 30px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .versions-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .versions-grid::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .versions-grid::-webkit-scrollbar-thumb {
+            background: #ff4444;
+            border-radius: 10px;
         }
 
         .version-card {
-            background: #1a1a1a;
+            background: linear-gradient(135deg, #1f1f1f, #151515);
             border: 1px solid #ff4444;
             border-radius: 15px;
             padding: 20px;
             text-align: center;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             text-decoration: none;
             display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .version-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,68,68,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .version-card:hover::before {
+            left: 100%;
         }
 
         .version-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(255,68,68,0.3);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(255,68,68,0.4);
             border-color: #ff8888;
         }
 
@@ -93,15 +194,17 @@
         }
 
         .version-name {
-            font-size: 20px;
+            font-size: 18px;
             color: #ffaaaa;
             margin-bottom: 10px;
+            font-weight: bold;
         }
 
         .version-desc {
             font-size: 12px;
             color: #888;
             margin-bottom: 15px;
+            line-height: 1.4;
         }
 
         .version-badge {
@@ -110,7 +213,14 @@
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .version-card:hover .version-badge {
+            background: #ff6666;
+            box-shadow: 0 0 10px rgba(255,68,68,0.5);
         }
 
         .footer {
@@ -122,6 +232,20 @@
             font-size: 12px;
         }
 
+        .footer span {
+            color: #ff8888;
+        }
+
+        .counter {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+
         .blood-effect {
             position: fixed;
             pointer-events: none;
@@ -129,7 +253,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, transparent 70%, rgba(255,0,0,0.1) 100%);
+            background: radial-gradient(circle, transparent 70%, rgba(255,0,0,0.05) 100%);
             z-index: 999;
         }
     </style>
@@ -138,9 +262,13 @@
     <div class="blood-effect"></div>
     <div class="menu-container">
         <div class="header">
-            <img src="images/igor.png" class="igor-avatar" alt="Игорь" onerror="this.src='https://via.placeholder.com/100/ff4444/ffffff?text=ИГОРЬ'">
+            <img src="images/igor.png" class="igor-avatar" alt="Игорь" onerror="this.src='https://via.placeholder.com/100/ff4444/ffffff?text=🐺'">
             <h1>⚡ СИМУЛЯТОР УЖАСНОГО ИГОРЯ ⚡</h1>
-            <p>Выбери версию игры | Рыгорь | Срыгорь | Мегасрыгрь</p>
+            <p>Рыгорь | Срыгорь | Мегасрыгрь | Фембой | Квадробер</p>
+            <div class="stats-badge">
+                📊 Всего версий: <span id="versionsCount">0</span>
+                👥 Сыграно раз: <span id="playCount">0</span>
+            </div>
         </div>
 
         <div class="versions-grid" id="versionsGrid">
@@ -148,64 +276,45 @@
         </div>
 
         <div class="footer">
-            🐺 Новые версии выходят каждую неделю | Тыкай по Игорю, если хочешь добавить свою версию
+            🐺 <span>Игорь</span> меняется — меняйся и ты | Каждая версия — новая жизнь
         </div>
     </div>
 
     <script>
-        // Список версий (будешь добавлять сюда новые)
-        const versions = [
-            {
-                number: "v1.0",
-                name: "Игорь в школе",
-                desc: "Оригинальный Игорь. Оскорбляет родню, угрожает смертью.",
-                file: "1v.html",
-                badge: "🐺 ОРИГИНАЛ"
-            },
-            {
-                number: "v2.0",
-                name: "Забивчик жесткий",
-                desc: "ХЗ",
-                file: "2v.html",
-                badge: "старая"
-            },
-            {
-                number: "v3.0",
-                name: "Игорь фембой или гопник",
-                desc: "Игорь ровный пацанчик как и пульс",
-                file: "3v.html",
-                badge: "Новая"
-            },
-            {
-                number: "v4.0",
-                name: "Игорь и Стринги",
-                desc: "Конкурс "Мисс Весна",
-                file: "4v.html",
-                badge: "Еще новее"
-            },
-            {
-                number: "v5.0",
-                name: "Пока нет",
-                desc: "Пока нет",
-                file: "5v.html",
-                badge: "Пока нет"
-            },
-            {
-                number: "v6.0",
-                name: "Пока нет",
-                desc: "Пока нет",
-                file: "5v.html",
-                badge: "Пока нет"
-            }
+        // Счётчик игр (сохраняется в localStorage)
+        let playCount = localStorage.getItem('igorPlayCount') ? parseInt(localStorage.getItem('igorPlayCount')) : 0;
 
+        // Список всех версий
+        const versions = [
+            { number: "v1.0", name: "Игорь в школе", desc: "Оригинальный Игорь. Оскорбляет родню, угрожает смертью.", file: "1v.html", badge: "🐺 ОРИГИНАЛ", color: "#ff4444" },
+            { number: "v2.0", name: "Забивчик жесткий", desc: "Погоня за Игорем. Сможете догнать труса?", file: "2v.html", badge: "🏃‍♂️ ЭКШН", color: "#ff8844" },
+            { number: "v3.0", name: "Фембой или Гопник", desc: "Игорь выбирает свой путь. Гопник умрёт за гаражами.", file: "3v.html", badge: "🎀 ВЫБОР", color: "#ff66aa" },
+            { number: "v4.0", name: "Игорь и Стринги", desc: "Конкурс 'Мисс Весна'. Сможет ли Игорь победить?", file: "4v.html", badge: "👙 НОВАЯ", color: "#ff88cc" },
+            { number: "v5.0", name: "Битва за Парк", desc: "Квадроберы против собачников. Кто победит?", file: "5v.html", badge: "🐺 ЭКШН", color: "#66ff66" },
+            { number: "v6.0", name: "Совместный Стрим", desc: "Игорь и Алиса становятся стримерами.", file: "6v.html", badge: "📺 НОВАЯ", color: "#aa88ff" },
+            { number: "v7.0", name: "Игорь и Алиса", desc: "Первое свидание. Сможет ли Игорь признаться?", file: "7v.html", badge: "💖 РОМАНТИКА", color: "#ff88aa" },
+            { number: "v8.0", name: "Новый Рыгорь", desc: "В школе появился Саша — копия старого Игоря.", file: "8v.html", badge: "👊 КОНФЛИКТ", color: "#ffaa44" },
+            { number: "v9.0", name: "Косплеер", desc: "Игорь участвует в конкурсе косплея на А4.", file: "9v.html", badge: "🎭 ТВОРЧЕСТВО", color: "#44aaff" },
+            { number: "v10.0", name: "Учитель Физкультуры", desc: "Игорь ведёт уроки в родной школе.", file: "10v.html", badge: "🏫 НОВАЯ", color: "#44ffaa" },
+            { number: "v11.0", name: "Игорь и Родители", desc: "Мама нашла стринги. Что делать?", file: "11v.html", badge: "🏠 НОВАЯ", color: "#ffaa66" },
+            { number: "v12.0", name: "Свидание (Полная)", desc: "Расширенная версия свидания с Алисой", file: "12v.html", badge: "💰 НОВАЯ", color: "#ffdd44" },
+            { number: "v13.0", name: "Анимешник", desc: "Игорь становится отаку и едет в Японию.", file: "13v.html", badge: "🎌 НОВАЯ", color: "#cc88ff" },
+            { number: "v14.0", name: "Бренд Стрингов", desc: "Игорь открывает свой бизнес. Станет миллионером?", file: "14v.html", badge: "💖 НОВАЯ", color: "#ff88aa" }
         ];
 
-        // Функция добавления новой версии (для будущих обновлений)
-        function addVersion(version) {
-            versions.push(version);
-            renderVersions();
+        // Функция обновления счётчика
+        function updatePlayCount() {
+            document.getElementById('playCount').innerText = playCount;
+            localStorage.setItem('igorPlayCount', playCount);
         }
 
+        // Функция добавления просмотра
+        function addPlay() {
+            playCount++;
+            updatePlayCount();
+        }
+
+        // Отрисовка карточек
         function renderVersions() {
             const grid = document.getElementById('versionsGrid');
             grid.innerHTML = '';
@@ -214,20 +323,44 @@
                 const card = document.createElement('a');
                 card.className = 'version-card';
                 card.href = version.file;
+                card.onclick = () => addPlay();
+                card.style.borderColor = version.color;
                 card.innerHTML = `
-                    <div class="version-number">${version.number}</div>
+                    <div class="version-number" style="color: ${version.color}">${version.number}</div>
                     <div class="version-name">${version.name}</div>
                     <div class="version-desc">${version.desc}</div>
-                    <span class="version-badge">${version.badge}</span>
+                    <span class="version-badge" style="background: ${version.color}">${version.badge}</span>
                 `;
                 grid.appendChild(card);
             });
+
+            document.getElementById('versionsCount').innerText = versions.length;
         }
 
-        renderVersions();
+        // Анимация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            renderVersions();
+            updatePlayCount();
 
-        // Консоль для добавления новых версий (для разработчика)
-        console.log('Добавить новую версию: addVersion({ number: "v6.0", name: "НАЗВАНИЕ", desc: "ОПИСАНИЕ", file: "6v.html", badge: "🏷️ ТЕГ" })');
+            // Эффект печати для заголовка
+            const title = document.querySelector('.header h1');
+            const originalText = title.innerHTML;
+            title.innerHTML = '';
+            let i = 0;
+            function typeTitle() {
+                if (i < originalText.length) {
+                    title.innerHTML += originalText[i];
+                    i++;
+                    setTimeout(typeTitle, 50);
+                }
+            }
+            typeTitle();
+        });
+
+        // Консоль для добавления новых версий
+        console.log('🔥 ДОБАВИТЬ НОВУЮ ВЕРСИЮ:');
+        console.log('addVersion({ number: "v15.0", name: "НАЗВАНИЕ", desc: "ОПИСАНИЕ", file: "15v.html", badge: "🏷️ ТЕГ", color: "#ffaa66" })');
+        console.log('🎀 Всего версий: ' + versions.length);
     </script>
 </body>
 </html>

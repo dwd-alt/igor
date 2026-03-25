@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v7.0 | Свидание</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #ff99cc 0%, #ff66aa 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 105, 180, 0.5);
+            overflow: hidden;
+            border: 1px solid #ff69b4;
+        }
+        .header {
+            background: linear-gradient(135deg, #c71585, #8b0a50);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #ff69b4;
+            position: relative;
+        }
+        .header h1 { color: #ffc0cb; font-size: 24px; }
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #ff69b4;
+            color: #ffc0cb;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .back-btn:hover { background: #ff69b4; color: #2a2a2a; }
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ff69b4;
+            color: #2a2a2a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .game-screen { padding: 25px; min-height: 550px; display: flex; flex-direction: column; }
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #ff69b4;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+        }
+        .dialogue-text { white-space: pre-wrap; word-wrap: break-word; }
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #ff69b4;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+        .options { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #ff69b4;
+            color: #ffc0cb;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .option-btn:hover { background: #ff69b4; color: #2a2a2a; transform: translateX(5px); }
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .restart-btn:hover { background: #ff69b4; color: #2a2a2a; }
+        .status { margin-top: 15px; padding: 10px; background: #1a1a1a; border-radius: 8px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v7.0 ⚡</h1>
+            <div class="version-tag">💖 СВИДАНИЕ</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box"><div class="dialogue-text" id="dialogueText"></div><span id="cursor" class="typing-cursor"></span></div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false, currentTimeout = null;
+        let romance = 0;
+        let embarrassment = 0;
+
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+        function clearOptions() { document.getElementById('optionsContainer').innerHTML = ''; }
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => { if (isTyping) return; clearOptions(); onClick(); };
+            container.appendChild(btn);
+        }
+        function showRestartButton() {
+            document.getElementById('restartBtn').style.display = 'block';
+            document.getElementById('restartBtn').onclick = () => location.reload();
+        }
+        function updateStatus(text) { document.getElementById('statusText').innerHTML = text; }
+
+        function startGame() {
+            typeText("💖 ПЕРВОЕ СВИДАНИЕ 💖\n\nАлиса: 'Игорь, я хочу тебе кое-что сказать...'\nИгорь (краснеет): 'Что?'\nАлиса: 'Давай сходим куда-нибудь? Ну... как свидание.'\nИгорь в шоке. Он никогда не был на свиданиях.\n\nЧто ответит Игорь?", () => {
+                setTimeout(() => {
+                    addOption("💕 'ДА, КОНЕЧНО! Я ОЧЕНЬ ХОЧУ!'", () => {
+                        romance += 2;
+                        typeText("Игорь: 'Да, конечно! Я очень хочу!'\nАлиса улыбнулась: 'Тогда завтра в 5?'", () => { setTimeout(() => chooseOutfit(), 500); });
+                    });
+                    addOption("😳 'Я... Я НЕ ЗНАЮ... СТРАШНО НЕМНОГО'", () => {
+                        embarrassment += 1;
+                        typeText("Игорь: 'Я... я не знаю... страшно немного.'\nАлиса: 'Не бойся, я с тобой! Просто будь собой.'", () => { setTimeout(() => chooseOutfit(), 500); });
+                    });
+                    addOption("😤 'СВИДАНИЯ ЭТО ДЛЯ СЛАБАКОВ' (старый Игорь)", () => {
+                        typeText("Игорь: 'Свидания это для слабаков!'\nАлиса обиделась: 'Ну и ладно...'\nОна ушла. Игорь остался один.", () => {
+                            setTimeout(() => {
+                                typeText("😔 ФИНАЛ: ИГОРЬ ВСЁ ИСПОРТИЛ 😔\n\nОн испугался чувств и потерял Алису. Рыгорь победил.", () => {
+                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь отказался от свидания");
+                                    showRestartButton();
+                                });
+                            }, 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function chooseOutfit() {
+            typeText("День свидания. Игорь стоит перед зеркалом.\nАлиса: 'Я уже выхожу! Жду в парке!'\nЧто наденет Игорь?", () => {
+                setTimeout(() => {
+                    addOption("🎀 РОЗОВУЮ ТОЛСТОВКУ + СТРИНГИ (смело)", () => {
+                        romance += 2;
+                        typeText("Игорь надел любимый образ. Алиса увидела и улыбнулась: 'Ты такой классный! Идём!'", () => { setTimeout(() => choosePlace(), 500); });
+                    });
+                    addOption("🦊 МАСКУ ЛИСЫ (квадробер-стайл)", () => {
+                        romance += 1;
+                        typeText("Игорь надел маску лисы. Алиса: 'Ого, ты решил удивить! Круто!'", () => { setTimeout(() => choosePlace(), 500); });
+                    });
+                    addOption("🧥 СЕРЫЙ СПОРТИВНЫЙ КОСТЮМ (не рисковать)", () => {
+                        embarrassment += 1;
+                        typeText("Игорь надел обычный костюм. Алиса: 'Ну... нормально. А где твоя розовая толстовка?'", () => { setTimeout(() => choosePlace(), 500); });
+                    });
+                }, 500);
+            });
+        }
+
+        function choosePlace() {
+            typeText("Алиса: 'Куда пойдём?'\nИгорь волнуется.", () => {
+                setTimeout(() => {
+                    addOption("🍕 В КАФЕ (поесть пиццу)", () => {
+                        romance += 1;
+                        typeText("Они сели в кафе. Игорь заказал пиццу с ананасом. Алиса: 'Ты любишь ананасы на пицце? Мы созданы друг для друга!'", () => { setTimeout(() => chooseAction(), 500); });
+                    });
+                    addOption("🏃‍♂️ В ПАРК (побегать на четвереньках)", () => {
+                        romance += 2;
+                        typeText("Они побежали по парку на четвереньках. Люди оглядывались, но им было весело. Алиса смеялась.", () => { setTimeout(() => chooseAction(), 500); });
+                    });
+                    addOption("🎬 В КИНО (романтическая комедия)", () => {
+                        typeText("В кино было темно. Игорь хотел взять Алису за руку, но испугался. Фильм закончился, а он так и не решился.", () => { setTimeout(() => chooseAction(), 500); });
+                    });
+                }, 500);
+            });
+        }
+
+        function chooseAction() {
+            typeText("Вечер. Они гуляют по набережной.\nАлиса: 'Мне так хорошо с тобой...'\nИгорь чувствует, что сейчас самый важный момент.", () => {
+                setTimeout(() => {
+                    addOption("💖 ВЗЯТЬ ЗА РУКУ", () => {
+                        romance += 3;
+                        typeText("Игорь взял Алису за руку. Она не отняла. Сердце билось как бешеное.", () => { setTimeout(() => finale(), 500); });
+                    });
+                    addOption("😳 СКАЗАТЬ 'ТЫ МНЕ ТОЖЕ НРАВИШЬСЯ'", () => {
+                        romance += 2;
+                        typeText("Игорь: 'Мне с тобой тоже очень хорошо... Ты мне нравишься.'\nАлиса покраснела: 'И ты мне...'", () => { setTimeout(() => finale(), 500); });
+                    });
+                    addOption("🏃‍♂️ СМУТИТЬСЯ И УБЕЖАТЬ", () => {
+                        embarrassment += 3;
+                        typeText("Игорь испугался и убежал. Алиса осталась одна, расстроенная.", () => {
+                            setTimeout(() => {
+                                typeText("😔 ФИНАЛ: ИГОРЬ УБЕЖАЛ 😔\n\nОн не смог справиться с чувствами. Алиса обиделась.", () => {
+                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Страх победил");
+                                    showRestartButton();
+                                });
+                            }, 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function finale() {
+            if (romance >= 6) {
+                typeText("💖 СЧАСТЛИВЫЙ ФИНАЛ 💖\n\nИгорь и Алиса стоят на мосту. Луна отражается в воде.\nАлиса: 'Игорь... Ты изменил мою жизнь.'\nИгорь: 'Это ты изменила меня. Спасибо, что поверила.'\nОни поцеловались. Вдали пробежал кот.\n\nС этого дня они вместе. Игорь больше никогда не будет рыгорем.", () => {
+                    updateStatus("✅ ХОРОШАЯ КОНЦОВКА: Игорь и Алиса теперь пара!");
+                    showRestartButton();
+                });
+            } else if (romance >= 3) {
+                typeText("💕 НОРМАЛЬНЫЙ ФИНАЛ 💕\n\nАлиса: 'Мне было очень хорошо с тобой. Может, встретимся ещё?'\nИгорь: 'Давай!'\nОни договорились о втором свидании. Не любовь, но начало.", () => {
+                    updateStatus("💕 СРЕДНЯЯ КОНЦОВКА: Будет второе свидание");
+                    showRestartButton();
+                });
+            } else {
+                typeText("😔 ГРУСТНЫЙ ФИНАЛ 😔\n\nАлиса: 'Игорь... Ты какой-то зажатый. Может, мы просто останемся друзьями?'\nИгорь кивнул. В душе было пусто. Но он хотя бы попробовал.", () => {
+                    updateStatus("😔 СРЕДНЯЯ КОНЦОВКА: Остались друзьями");
+                    showRestartButton();
+                });
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

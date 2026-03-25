@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v5.0 | Битва за Парк</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a3a1a 0%, #0a2a0a 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(100, 255, 100, 0.3);
+            overflow: hidden;
+            border: 1px solid #88ff88;
+        }
+        .header {
+            background: linear-gradient(135deg, #2a6b2a, #1a4a1a);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #88ff88;
+            position: relative;
+        }
+        .header h1 { color: #aaffaa; font-size: 24px; }
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #88ff88;
+            color: #aaffaa;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .back-btn:hover { background: #88ff88; color: #1a4a1a; }
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #88ff88;
+            color: #1a4a1a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .game-screen { padding: 25px; min-height: 550px; display: flex; flex-direction: column; }
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #88ff88;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+        }
+        .dialogue-text { white-space: pre-wrap; word-wrap: break-word; }
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #88ff88;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+        .options { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #88ff88;
+            color: #aaffaa;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .option-btn:hover { background: #88ff88; color: #1a4a1a; transform: translateX(5px); }
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .restart-btn:hover { background: #88ff88; color: #1a4a1a; }
+        .status { margin-top: 15px; padding: 10px; background: #1a1a1a; border-radius: 8px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v5.0 ⚡</h1>
+            <div class="version-tag">🐺 КВАДРОБЕР</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box"><div class="dialogue-text" id="dialogueText"></div><span id="cursor" class="typing-cursor"></span></div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false, currentTimeout = null;
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+        function clearOptions() { document.getElementById('optionsContainer').innerHTML = ''; }
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => { if (isTyping) return; clearOptions(); onClick(); };
+            container.appendChild(btn);
+        }
+        function showRestartButton() {
+            document.getElementById('restartBtn').style.display = 'block';
+            document.getElementById('restartBtn').onclick = () => location.reload();
+        }
+        function updateStatus(text) { document.getElementById('statusText').innerHTML = text; }
+
+        let respect = 0;
+        let animalSpirit = 0;
+
+        function startGame() {
+            typeText("🐺 БИТВА ЗА ПАРК 🐺\n\nИгорь и Алиса каждое утро бегают в парке на четвереньках.\nНо однажды в парк пришли собачники с огромными псами.\nСобачник: 'Убирайтесь отсюда со своей квадробикой! Это парк для нормальных собак!'\n\nАлиса: 'Игорь, мы должны защитить наше место!'\nИгорь: 'Но они большие и злые...'\nАлиса: 'Вместе мы сила! Давай!'", () => {
+                setTimeout(() => showChoice1(), 500);
+            });
+        }
+
+        function showChoice1() {
+            addOption("🐺 ПОЗВАТЬ ДРУГИХ КВАДРОБЕРОВ", () => {
+                respect += 2;
+                typeText("Игорь собрал всех квадроберов из района. Их целая стая!\nСобачники напряглись: их меньше.", () => { setTimeout(() => showChoice2(), 500); });
+            });
+            addOption("🦊 ПОЙТИ ОДНОМУ, ПОГОВОРИТЬ МИРОМ", () => {
+                animalSpirit += 1;
+                typeText("Игорь подошёл к собачникам: 'Давайте жить дружно? Мы не мешаем.'\nСобачник: 'Пошёл отсюда, клоун!'\nИгоря прогнали.", () => {
+                    setTimeout(() => {
+                        typeText("😔 ФИНАЛ: ИГОРЯ ПРОГНАЛИ 😔\n\nОн не смог защитить парк. Квадроберы ушли в другое место.", () => {
+                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь проиграл битву");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            });
+            addOption("🏃‍♂️ УБЕЖАТЬ, НЕ СВЯЗЫВАТЬСЯ", () => {
+                typeText("Игорь струсил и убежал. Алиса осталась одна.\nОна обиделась на Игоря. Дружба треснула.", () => {
+                    setTimeout(() => {
+                        typeText("😔 ФИНАЛ: ИГОРЬ СТРУСИЛ 😔\n\nОн бросил друзей. Квадроберы его больше не уважают.", () => {
+                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь предал квадроберов");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            });
+        }
+
+        function showChoice2() {
+            typeText("Стая квадроберов и собачники стоят друг напротив друга.\nСобачник: 'Соревнование! Чья стая быстрее?'", () => {
+                setTimeout(() => {
+                    addOption("🏃‍♂️ СОГЛАСИТЬСЯ НА ЗАБЕГ", () => {
+                        animalSpirit += 2;
+                        typeText("Игорь побежал на четвереньках быстрее всех!\nОн обогнал даже собак!\nСобачники в шоке.", () => { setTimeout(() => showChoice3(), 500); });
+                    });
+                    addOption("🐕 ПРЕДЛОЖИТЬ ДРУЖБУ", () => {
+                        respect += 2;
+                        typeText("Игорь: 'Давайте дружить? Мы все любим бегать!'\nСобачник удивился. Один пёс подошёл к Игорю и лизнул его.", () => { setTimeout(() => showChoice3(), 500); });
+                    });
+                    addOption("😤 НАЧАТЬ ДРАКУ", () => {
+                        typeText("Игорь: 'А ну пошли нахер отсюда!'\nНачалась драка. Игоря укусила собака.\nЕго увезли в травмпункт.", () => {
+                            setTimeout(() => {
+                                typeText("😔 ФИНАЛ: ИГОРЬ В БОЛЬНИЦЕ 😔\n\nДрака — не выход. Парк закрыли для всех.", () => {
+                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Игорь пострадал в драке");
+                                    showRestartButton();
+                                });
+                            }, 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function showChoice3() {
+            typeText("После соревнования собачники уважительно смотрят на Игоря.\nСобачник: 'Ты крутой, пацан. Может, и правда, места хватит всем?'", () => {
+                setTimeout(() => {
+                    addOption("🤝 ПОДАТЬ ЛАПУ (СОГЛАСИТЬСЯ)", () => {
+                        respect += 2;
+                        typeText("Игорь протянул руку как лапу. Собачник пожал.\nС этого дня квадроберы и собачники бегают вместе.", () => { setTimeout(() => finale(), 500); });
+                    });
+                    addOption("🦊 ПРЕДЛОЖИТЬ СОВМЕСТНЫЙ ЗАБЕГ", () => {
+                        animalSpirit += 2;
+                        typeText("Игорь: 'А давайте раз в неделю будем вместе бегать!'\nСобачник: 'А почему бы и нет?'\nТак родилась традиция.", () => { setTimeout(() => finale(), 500); });
+                    });
+                }, 500);
+            });
+        }
+
+        function finale() {
+            if (respect >= 3 || animalSpirit >= 4) {
+                typeText("🏆 ПОБЕДА! 🏆\n\nПарк объединил квадроберов и собачников.\nИгоря выбрали главным по парку. Он надел корону из листьев.\nАлиса: 'Я знала, что ты сможешь!'\nИгорь теперь — Король Парка.", () => {
+                    setTimeout(() => {
+                        typeText("✨ СЧАСТЛИВЫЙ ФИНАЛ ✨\n\nИгорь стал лидером квадроберов и подружился с собачниками. Парк теперь общий.", () => {
+                            updateStatus("✅ ХОРОШАЯ КОНЦОВКА: Игорь защитил парк!");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            } else {
+                typeText("🏆 ФИНАЛ 🏆\n\nИгорь и собачники договорились бегать в разные дни.\nПарк поделили. Не идеально, но мирно.\nАлиса: 'Главное, что мы не сдались!'", () => {
+                    setTimeout(() => {
+                        typeText("🤝 НОРМАЛЬНЫЙ ФИНАЛ 🤝\n\nИгорь отстоял право бегать в парке, но стал лидером только наполовину.", () => {
+                            updateStatus("🤝 СРЕДНЯЯ КОНЦОВКА: Мирное сосуществование");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

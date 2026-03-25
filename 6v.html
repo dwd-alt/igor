@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игорь v6.0 | Совместный Стрим</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #2a1a4a 0%, #1a0a2a 100%);
+            font-family: 'Courier New', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(200, 100, 255, 0.3);
+            overflow: hidden;
+            border: 1px solid #cc88ff;
+        }
+        .header {
+            background: linear-gradient(135deg, #6a2a8b, #4a1a6b);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #cc88ff;
+            position: relative;
+        }
+        .header h1 { color: #ddbbff; font-size: 24px; }
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2a2a2a;
+            border: 1px solid #cc88ff;
+            color: #ddbbff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .back-btn:hover { background: #cc88ff; color: #2a1a4a; }
+        .version-tag {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #cc88ff;
+            color: #2a1a4a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .game-screen { padding: 25px; min-height: 550px; display: flex; flex-direction: column; }
+        .dialogue-box {
+            background: #0a0a0a;
+            border-left: 4px solid #cc88ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 200px;
+        }
+        .dialogue-text { white-space: pre-wrap; word-wrap: break-word; }
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #cc88ff;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+        .options { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #cc88ff;
+            color: #ddbbff;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .option-btn:hover { background: #cc88ff; color: #2a1a4a; transform: translateX(5px); }
+        .restart-btn {
+            background: #333;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .restart-btn:hover { background: #cc88ff; color: #2a1a4a; }
+        .status { margin-top: 15px; padding: 10px; background: #1a1a1a; border-radius: 8px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <a href="menu.html" class="back-btn">← МЕНЮ</a>
+            <h1>⚡ ИГОРЬ v6.0 ⚡</h1>
+            <div class="version-tag">📺 СОВМЕСТНЫЙ СТРИМ</div>
+        </div>
+        <div class="game-screen">
+            <div class="dialogue-box"><div class="dialogue-text" id="dialogueText"></div><span id="cursor" class="typing-cursor"></span></div>
+            <div class="options" id="optionsContainer"></div>
+            <button class="restart-btn" id="restartBtn" style="display: none;">🔁 ПЕРЕИГРАТЬ</button>
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false, currentTimeout = null;
+        function typeText(text, callback) {
+            if (currentTimeout) clearTimeout(currentTimeout);
+            isTyping = true;
+            const dialogueDiv = document.getElementById('dialogueText');
+            const cursor = document.getElementById('cursor');
+            dialogueDiv.innerHTML = '';
+            cursor.style.display = 'inline-block';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    dialogueDiv.innerHTML += text[i];
+                    i++;
+                    currentTimeout = setTimeout(type, 40);
+                } else {
+                    isTyping = false;
+                    cursor.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+        function clearOptions() { document.getElementById('optionsContainer').innerHTML = ''; }
+        function addOption(text, onClick) {
+            const container = document.getElementById('optionsContainer');
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = text;
+            btn.onclick = () => { if (isTyping) return; clearOptions(); onClick(); };
+            container.appendChild(btn);
+        }
+        function showRestartButton() {
+            document.getElementById('restartBtn').style.display = 'block';
+            document.getElementById('restartBtn').onclick = () => location.reload();
+        }
+        function updateStatus(text) { document.getElementById('statusText').innerHTML = text; }
+
+        let followers = 0;
+        let chaos = 0;
+
+        function startGame() {
+            typeText("📺 СОВМЕСТНЫЙ СТРИМ 📺\n\nИгорь и Алиса решили стать стримерами.\nАлиса: 'Давай, у меня СДВГ, я могу болтать часами! А ты будешь бегать на четвереньках!'\nИгорь: 'А вдруг нас забанили?'\nАлиса: 'Не ссы, будет весело!'\n\nОни включили камеру. В чате 0 зрителей.", () => {
+                setTimeout(() => showChoice1(), 500);
+            });
+        }
+
+        function showChoice1() {
+            addOption("🎤 НАЧАТЬ РАССКАЗЫВАТЬ ИСТОРИЮ ПРО РЫГОРЯ", () => {
+                followers += 10;
+                typeText("Игорь рассказал, как он был злым рыгорем.\nАлиса комментировала: 'Он такой смешной был!'\nВ чат зашли 10 человек.", () => { setTimeout(() => showChoice2(), 500); });
+            });
+            addOption("🏃‍♂️ ПОКАЗАТЬ КВАДРОБИКУ В ПРЯМОМ ЭФИРЕ", () => {
+                followers += 15;
+                chaos += 1;
+                typeText("Игорь встал на четвереньки и начал прыгать.\nАлиса: 'Смотрите, какой быстрый!'\nПришли 15 зрителей. Некоторые пишут: 'Что за дичь?'", () => { setTimeout(() => showChoice2(), 500); });
+            });
+            addOption("😨 МОЛЧАТЬ, НИЧЕГО НЕ ДЕЛАТЬ", () => {
+                typeText("Игорь и Алиса сидят молча.\nЗрители не приходят.\nСтрим провалился.", () => {
+                    setTimeout(() => {
+                        typeText("😔 ФИНАЛ: СТРИМ ПРОВАЛИЛСЯ 😔\n\nОни не решились быть собой. Канал умер.", () => {
+                            updateStatus("❌ ПЛОХАЯ КОНЦОВКА: 0 подписчиков");
+                            showRestartButton();
+                        });
+                    }, 500);
+                });
+            });
+        }
+
+        function showChoice2() {
+            typeText("На стрим зашли первые зрители.\nЧат пишет: 'Кто вы?'\nАлиса: 'Мы Игорь и Алиса! Бегаем на четвереньках и носим стринги!'\nЧат оживился.", () => {
+                setTimeout(() => {
+                    addOption("💰 ЗАЧИТАТЬ ДОНАТ (10 рублей)", () => {
+                        followers += 5;
+                        typeText("Игорь: 'Спасибо за донат, Денис!' \nЧат: 'О, ответили! Круто!'", () => { setTimeout(() => showChoice3(), 500); });
+                    });
+                    addOption("🎭 НАДЕТЬ МАСКУ ЛИСЫ В ЭФИРЕ", () => {
+                        followers += 20;
+                        chaos += 1;
+                        typeText("Игорь надел маску лисы.\nЧат взорвался: 'ЛИСА!!! КВАДРОБЕР!!!'\nПришло ещё 20 человек.", () => { setTimeout(() => showChoice3(), 500); });
+                    });
+                    addOption("🤬 НАЧАТЬ МАТЕРИТЬСЯ (как старый Игорь)", () => {
+                        typeText("Игорь: 'А ну пишите донаты, пидоры!'\nЧат в шоке. Алиса: 'Игорь, зачем ты так?'\nСтрим забанили за оскорбления.", () => {
+                            setTimeout(() => {
+                                typeText("😔 ФИНАЛ: БАН НА TWITCH 😔\n\nИгорь не смог сдержать старого себя. Канал закрыли.", () => {
+                                    updateStatus("❌ ПЛОХАЯ КОНЦОВКА: Бан за оскорбления");
+                                    showRestartButton();
+                                });
+                            }, 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function showChoice3() {
+            typeText("Стрим идёт уже час. Уже 100 зрителей.\nВ чате пишут: 'Сделайте что-нибудь безумное!'\nАлиса: 'Игорь, что делаем?'", () => {
+                setTimeout(() => {
+                    addOption("🦊 БЕГАТЬ НА ЧЕТВЕРЕНЬКАХ ПО КОМНАТЕ", () => {
+                        followers += 50;
+                        chaos += 1;
+                        typeText("Игорь носился по комнате, перепрыгивал через диван.\nЧат: 'ЛОЛ, КРАСАВЧИК!'\nПришло ещё 50 человек.", () => { setTimeout(() => showChoice4(), 500); });
+                    });
+                    addOption("🎸 СПЕТЬ ПЕСНЮ ПРО СТРИНГИ", () => {
+                        followers += 40;
+                        typeText("Игорь запел: 'Стринги-стринги, я ношу, себя я больше не стыжу!'\nЧат в восторге. Кто-то записал клип.", () => { setTimeout(() => showChoice4(), 500); });
+                    });
+                    addOption("📢 РАССКАЗАТЬ ПРО ПАРК И СОБАЧНИКОВ", () => {
+                        followers += 30;
+                        typeText("Игорь рассказал историю битвы за парк.\nЧат: 'Герой! Уважаю!'\nИстория разлетелась по соцсетям.", () => { setTimeout(() => showChoice4(), 500); });
+                    });
+                }, 500);
+            });
+        }
+
+        function showChoice4() {
+            typeText("Стрим стал вирусным! Уже 1000 зрителей.\nАлиса: 'Игорь, нам пишет известный блогер! Он зовёт нас на совместный стрим!'\nИгорь в шоке.", () => {
+                setTimeout(() => {
+                    addOption("🎉 СОГЛАСИТЬСЯ НА КОЛЛАБ", () => {
+                        followers += 500;
+                        typeText("Игорь и Алиса пошли на стрим к известному блогеру.\nИх показали на всю страну!\nИгорь стал звездой TikTok.", () => { setTimeout(() => finale(true), 500); });
+                    });
+                    addOption("😨 ОТКАЗАТЬСЯ, ИСПУГАТЬСЯ", () => {
+                        typeText("Игорь: 'Не, я стесняюсь...'\nАлиса: 'Но это же шанс!'\nИгорь отказался. Блогер обиделся.", () => {
+                            setTimeout(() => finale(false), 500);
+                        });
+                    });
+                }, 500);
+            });
+        }
+
+        function finale(isStar) {
+            if (isStar && followers >= 100) {
+                typeText("🌟 СЧАСТЛИВЫЙ ФИНАЛ 🌟\n\nИгорь и Алиса стали известными стримерами.\nУ них 100 тысяч подписчиков. Они носят стринги, бегают на четвереньках и вдохновляют других.\nИгорь: 'Спасибо, Алиса. Ты изменила мою жизнь.'\nАлиса: 'Ты сам изменился, Игорь!'", () => {
+                    updateStatus("✅ ХОРОШАЯ КОНЦОВКА: Игорь и Алиса — звёзды интернета!");
+                    showRestartButton();
+                });
+            } else if (followers >= 50) {
+                typeText("🎀 НОРМАЛЬНЫЙ ФИНАЛ 🎀\n\nУ Игоря и Алисы 5000 подписчиков.\nОни стримят по выходным. Не звёзды, но счастливы.\nАлиса: 'Мы крутые, даже без блогера!'\nИгорь улыбается.", () => {
+                    updateStatus("🎀 СРЕДНЯЯ КОНЦОВКА: Маленький, но свой канал");
+                    showRestartButton();
+                });
+            } else {
+                typeText("😔 ФИНАЛ: НЕ СТАЛОСЬ 😔\n\nИгорь испугался славы. Стримы сошли на нет.\nАлиса: 'Жалко, мы могли бы стать звездами...'\nИгорь: 'Мне и так хорошо с тобой.'", () => {
+                    updateStatus("😔 ПЛОХАЯ КОНЦОВКА: Игорь отказался от славы");
+                    showRestartButton();
+                });
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
